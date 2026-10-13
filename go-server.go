@@ -315,6 +315,26 @@ func (h *hub) serve(conn *wsConn) {
 		y:    hubH/2 + 160,
 	}
 
+	// Periodic pings keep idle connections (e.g. a player deep in the
+	// Gauntlet who sends no updates) from being reaped by proxies/NAT.
+	done := make(chan struct{})
+	defer close(done)
+	go func() {
+		t := time.NewTicker(30 * time.Second)
+		defer t.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-t.C:
+				if err := conn.writeFrame(opPing, nil); err != nil {
+					conn.conn.Close()
+					return
+				}
+			}
+		}
+	}()
+
 	registered := false
 	defer func() {
 		if registered {

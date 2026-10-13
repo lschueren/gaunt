@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GAUNTLET</title>
+<title>Leos Lounge</title>
 <style>
   :root{ --ink:#e9ecf5; --dim:#8b93a7; --gold:#f6c744; }
   *{ box-sizing:border-box; }
@@ -39,11 +39,14 @@
   #chat{ width:min(560px,80%); padding:10px 14px; font:inherit; font-size:15px; color:var(--ink);
     background:#10141fee; border:2px solid var(--gold); border-radius:6px; outline:none;
     box-shadow:0 8px 30px #000; }
-  #coffee{ position:fixed; right:16px; bottom:16px; z-index:20; text-decoration:none;
-    font-size:13px; letter-spacing:1px; color:#1a1206; background:#ffdd00; padding:10px 14px;
-    border-radius:24px; box-shadow:0 4px 0 #b89b00, 0 8px 24px #00000088; font-weight:700; }
-  #coffee:hover{ background:#ffe74d; }
-  #coffee:active{ transform:translateY(2px); box-shadow:0 2px 0 #b89b00; }
+  #paypal{ position:fixed; right:16px; bottom:16px; z-index:20; text-decoration:none;
+    display:flex; align-items:center; gap:8px; font-size:13px; letter-spacing:1px; color:#fff;
+    background:#0070ba; padding:10px 16px; border-radius:24px; font-weight:700;
+    box-shadow:0 4px 0 #003087, 0 8px 24px #00000088; }
+  #paypal:hover{ background:#009cde; }
+  #paypal:active{ transform:translateY(2px); box-shadow:0 2px 0 #003087; }
+  #paypal .pp{ font-style:italic; font-weight:800; letter-spacing:0;
+    background:#fff; color:#003087; border-radius:3px; padding:0 4px; }
   #login .name{ margin-top:4px; }
   #login input{ padding:11px 16px; font:inherit; font-size:16px; letter-spacing:1px; color:var(--ink);
     background:#10141fee; border:2px solid var(--gold); border-radius:6px; outline:none;
@@ -78,27 +81,27 @@
   </div>
   <div id="online">ONLINE <b>1</b></div>
   <div id="chatlog"></div>
-  <div id="hubhint">STEP INTO THE PORTAL TO ENTER THE GAUNTLET</div>
+  <div id="hubhint">STEP INTO THE GATE TO ENTER THE GAUNTLET · LEO'S LOUNGE</div>
   <div id="chatwrap"><input id="chat" maxlength="120" autocomplete="off" spellcheck="false" placeholder="Say something… (Enter to send)"></div>
   <div id="login" class="overlay">
-    <h1>GAUNTLET</h1>
-    <p>A shared world. Wander the hub, talk to whoever is around,<br>then descend into the Gauntlet when you dare.</p>
+    <h1>LEOS LOUNGE</h1>
+    <p>A cosy shared village. Wander the square, chat with the locals,<br>then step through the gate into the Gauntlet when you dare.</p>
     <div class="name"><input id="nameinput" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Choose a name…"></div>
-    <div class="status" id="loginstatus">connecting to the world…</div>
-    <button class="play" id="joinbtn" disabled>ENTER THE HUB</button>
+    <div class="status" id="loginstatus">connecting to the lounge…</div>
+    <button class="play" id="joinbtn" disabled>ENTER THE VILLAGE</button>
   </div>
   <div id="over" class="overlay hidden">
     <h2>YOU DIED</h2>
     <p id="overtxt"></p>
-    <button class="play" id="retrybtn">RETURN TO HUB</button>
+    <button class="play" id="retrybtn">RETURN TO VILLAGE</button>
   </div>
   <div id="paused" class="overlay hidden">
     <h1>PAUSED</h1>
     <p>Press <b>Esc</b> to resume</p>
-    <button class="ghost" id="leavebtn">RETURN TO HUB</button>
+    <button class="ghost" id="leavebtn">RETURN TO VILLAGE</button>
   </div>
 </div>
-<a id="coffee" href="https://www.buymeacoffee.com/" target="_blank" rel="noopener noreferrer">☕ Buy me a coffee</a>
+<a id="paypal" href="https://www.paypal.com/donate/?business=lschueren%40gmail.com&no_recurring=0&item_name=Support%20Leos%20Lounge&currency_code=EUR" target="_blank" rel="noopener noreferrer"><span class="pp">PayPal</span> Donate</a>
 
 <script>
 (function(){
@@ -326,6 +329,114 @@ var SPRITES = {
     "dddddddddddddddd",
     "dddddddddddddddd",
     "dddddddedddddddd"
+  ],
+  grass: [
+    "gggggggggggggggg",
+    "gggggggggggGgggg",
+    "gGgggggggggggggg",
+    "gggggggGgggggggg",
+    "gggggggggggggggg",
+    "ggggggggggggGggg",
+    "ggGggggggggggggg",
+    "gggggggggggggggg",
+    "gggggggggggggggg",
+    "gggggggGgggggggg",
+    "gggggggggggggggg",
+    "gGgggggggggggggG",
+    "gggggggggggggggg",
+    "ggggggggggGggggg",
+    "ggggGggggggggggg",
+    "gggggggggggggggg"
+  ],
+  path: [
+    "nnnnnnnnnnnnnnnn",
+    "nnnSnnnnNnnnnnnn",
+    "nnnnnnnnnnnnnnnn",
+    "nNnnnnnnnnnSnnnn",
+    "nnnnnnnnnnnnnnnn",
+    "nnnnnnSnnnnnnnnn",
+    "nnnnnnnnnnnNnnnn",
+    "Snnnnnnnnnnnnnnn",
+    "nnnnNnnnnnnnnnnn",
+    "nnnnnnnnnnSnnnnn",
+    "nnnnnnnnnnnnnnnn",
+    "nnnSnnnnnnnnNnnn",
+    "nnnnnnnnnnnnnnnn",
+    "nnnnnnnnSnnnnnnn",
+    "nNnnnnnnnnnnnnnn",
+    "nnnnnnnnnnnnSnnn"
+  ],
+  bush: [
+    "................",
+    "................",
+    "......GGGG......",
+    "....GGggggGG....",
+    "...GgrggggrgG...",
+    "..GggggggggggG..",
+    "..GgggyggggygG..",
+    ".GggggggggggggG.",
+    ".GggggggggggggG.",
+    "..GggggggggggG..",
+    "...GggggggggG...",
+    "....GGggggGG....",
+    "......GGGG......",
+    "................",
+    "................",
+    "................"
+  ],
+  lamp: [
+    ".......yy.......",
+    "......yyyy......",
+    "......yyyy......",
+    "......yYyY......",
+    ".......kk.......",
+    ".......kk.......",
+    ".......kk.......",
+    ".......kk.......",
+    ".......kk.......",
+    ".......kk.......",
+    ".......kk.......",
+    ".......kk.......",
+    "......kkkk......",
+    ".....kkkkkk.....",
+    "................",
+    "................"
+  ],
+  well: [
+    "................",
+    "....kkkkkkkk....",
+    "...kcccccccck...",
+    "...kcCCCCCCck...",
+    "...kcCuuuuCck...",
+    "...kcCuuuuCck...",
+    "...kcCCCCCCck...",
+    "...kcccccccck...",
+    "....kkkkkkkk....",
+    "......kkkk......",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................"
+  ],
+  stall: [
+    "...kkkkkkkkkk...",
+    "..krrwwrrwwrrk..",
+    ".krrwwrrwwrrwwk.",
+    ".kkkkkkkkkkkkkk.",
+    "..knnnnnnnnnnk..",
+    "..knNnnnnnnNnk..",
+    "..knnnnnnnnnnk..",
+    "..kkkkkkkkkkkk..",
+    "..kk........kk..",
+    "..kk........kk..",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................"
   ],
   generator: [
     "................",
@@ -1053,7 +1164,7 @@ var HUB_TW = 40, HUB_TH = 28;
 var HUB_W = HUB_TW * TILE, HUB_H = HUB_TH * TILE;
 var HUB_SPEED = 172;
 
-var hubGrid, portalPos, hubSpawn, hubPlayer, hubCam;
+var hubGrid, portalPos, hubSpawn, hubPlayer, hubCam, houses, fountainPos;
 var remotes = {};
 var scene = "login";
 var net = null, myId = null, myName = "", myHue = 0;
@@ -1076,30 +1187,104 @@ function genHub(){
       row.push((x === 0 || y === 0 || x === HUB_TW-1 || y === HUB_TH-1) ? 1 : 0);
     hubGrid.push(row);
   }
-  for (var fy = -1; fy <= 1; fy++)
-    for (var fx = -1; fx <= 1; fx++)
-      hubGrid[12 + fy][20 + fx] = 3;
-  hubGrid[8][13] = 5; hubGrid[8][27] = 5; hubGrid[20][13] = 5; hubGrid[20][27] = 5;
 
-  var rnd = mulberry32(1337);
+  // Two crossing avenues meeting at the village square.
+  for (var ax = 2; ax <= HUB_TW-3; ax++){ hubGrid[14][ax] = 6; hubGrid[15][ax] = 6; }
+  for (var ay = 3; ay <= HUB_TH-3; ay++){ hubGrid[ay][19] = 6; hubGrid[ay][20] = 6; }
+
+  // Central plaza.
+  for (var py = 11; py <= 18; py++)
+    for (var px = 15; px <= 24; px++)
+      hubGrid[py][px] = 6;
+
+  // Fountain sits in the middle of the square (2x2 solid, drawn as one sprite).
+  hubGrid[14][19] = 3; hubGrid[14][20] = 3;
+  hubGrid[15][19] = 3; hubGrid[15][20] = 3;
+  fountainPos = { x: 20*TILE, y: 15*TILE };
+
+  // Cottages framing the square. Footprints become solid tiles.
+  houses = [
+    { x:4,  y:4,  w:4, h:3 }, { x:30, y:4,  w:5, h:3 },
+    { x:4,  y:20, w:4, h:3 }, { x:31, y:20, w:5, h:3 },
+    { x:12, y:4,  w:3, h:3 }, { x:25, y:4,  w:3, h:3 },
+    { x:12, y:20, w:3, h:3 }, { x:25, y:20, w:3, h:3 }
+  ];
+  for (var hi = 0; hi < houses.length; hi++){
+    var hs = houses[hi];
+    for (var hy = hs.y; hy < hs.y + hs.h; hy++)
+      for (var hx = hs.x; hx < hs.x + hs.w; hx++)
+        hubGrid[hy][hx] = 7;
+  }
+
+  // Market stalls on the plaza corners.
+  hubGrid[11][15] = 11; hubGrid[11][24] = 11;
+  hubGrid[18][15] = 11; hubGrid[18][24] = 11;
+
+  // Statues guard the gate at the top of the avenue.
+  hubGrid[4][17] = 5; hubGrid[4][22] = 5;
+
+  // Fenced flower gardens in the corners of the village.
+  function garden(x0, y0, x1, y1){
+    for (var gx = x0; gx <= x1; gx++){
+      if (hubGrid[y0][gx] === 0) hubGrid[y0][gx] = 8;
+      if (hubGrid[y1][gx] === 0) hubGrid[y1][gx] = 8;
+    }
+    for (var gy = y0; gy <= y1; gy++){
+      if (hubGrid[gy][x0] === 0) hubGrid[gy][x0] = 8;
+      if (hubGrid[gy][x1] === 0) hubGrid[gy][x1] = 8;
+    }
+    for (var fy = y0 + 1; fy < y1; fy++)
+      for (var fx = x0 + 1; fx < x1; fx++)
+        if (hubGrid[fy][fx] === 0 && (fx + fy) % 2 === 0) hubGrid[fy][fx] = 12;
+  }
+  garden(2, 8, 7, 12);
+  garden(32, 8, 37, 12);
+  garden(2, 17, 7, 21);
+  garden(32, 17, 37, 21);
+
+  // Lamp posts lighting the avenues.
+  var lamps = [[18,7],[21,7],[18,12],[21,12],[18,17],[21,17],[18,22],[21,22],
+               [8,13],[13,13],[27,13],[32,13],[8,16],[13,16],[27,16],[32,16]];
+  for (var li = 0; li < lamps.length; li++){
+    var L = lamps[li];
+    if (hubGrid[L[1]][L[0]] === 0 || hubGrid[L[1]][L[0]] === 6) hubGrid[L[1]][L[0]] = 10;
+  }
+
+  // A well just off the square.
+  if (hubGrid[11][13] === 0) hubGrid[11][13] = 9;
+
+  // Scatter trees over the open grass, leaving the streets and square clear.
+  var rnd = mulberry32(4242);
   for (var ty = 2; ty < HUB_TH-2; ty++){
     for (var tx = 2; tx < HUB_TW-2; tx++){
       if (hubGrid[ty][tx] !== 0) continue;
-      var edge = (tx < 5 || tx > HUB_TW-6 || ty < 5 || ty > HUB_TH-6);
-      if (!edge) continue;
-      if (tx >= 17 && tx <= 23) continue;
-      if (rnd() < 0.22) hubGrid[ty][tx] = 2;
+      var nearRoad = (ty >= 13 && ty <= 16) || (tx >= 18 && tx <= 21) ||
+                     (ty >= 10 && ty <= 19 && tx >= 14 && tx <= 25);
+      if (nearRoad) continue;
+      if (rnd() < 0.13) hubGrid[ty][tx] = 2;
     }
   }
-  hubGrid[4][20] = 4;
-  portalPos = { x: 20*TILE + TILE/2, y: 4*TILE + TILE/2 };
-  hubSpawn  = { x: 20*TILE + TILE/2, y: 20*TILE + TILE/2 };
+  // Dense treeline around the village edges.
+  for (var bx = 1; bx < HUB_TW-1; bx++){
+    if (hubGrid[1][bx] === 0 && rnd() < 0.6) hubGrid[1][bx] = 2;
+    if (hubGrid[HUB_TH-2][bx] === 0 && rnd() < 0.6) hubGrid[HUB_TH-2][bx] = 2;
+  }
+  for (var by = 1; by < HUB_TH-1; by++){
+    if (hubGrid[by][1] === 0 && rnd() < 0.6) hubGrid[by][1] = 2;
+    if (hubGrid[by][HUB_TW-2] === 0 && rnd() < 0.6) hubGrid[by][HUB_TW-2] = 2;
+  }
+
+  // The gate to the Gauntlet, at the head of the avenue.
+  hubGrid[2][19] = 6; hubGrid[2][20] = 6;
+  hubGrid[2][20] = 4;
+  portalPos = { x: 20*TILE, y: 2*TILE + TILE/2 };
+  hubSpawn  = { x: 20*TILE, y: 23*TILE };
 }
 
+var HUB_SOLID = { "1":1, "2":1, "3":1, "5":1, "7":1, "8":1, "9":1, "10":1, "11":1, "12":1 };
 function hubSolid(tx, ty){
   if (tx < 0 || ty < 0 || tx >= HUB_TW || ty >= HUB_TH) return true;
-  var v = hubGrid[ty][tx];
-  return v === 1 || v === 2 || v === 3 || v === 5;
+  return HUB_SOLID[hubGrid[ty][tx]] === 1;
 }
 function hubCollides(x, y, r){
   var x0 = Math.floor((x-r)/TILE), x1 = Math.floor((x+r)/TILE);
@@ -1290,31 +1475,119 @@ function heroSpriteFor(dir){
   return "hero_down";
 }
 
+function drawFence(cx, cy){
+  ctx.fillStyle = "#6b4a26";
+  ctx.fillRect(cx - TILE/2 + 2, cy - 7, TILE - 4, 3);
+  ctx.fillRect(cx - TILE/2 + 2, cy + 1, TILE - 4, 3);
+  ctx.fillStyle = "#4e3115";
+  ctx.fillRect(cx - TILE/2 + 3, cy - 13, 4, 24);
+  ctx.fillRect(cx + TILE/2 - 7, cy - 13, 4, 24);
+}
+
+function drawHouse(tx, ty, tw, th){
+  var x = tx*TILE - hubCam.x, y = ty*TILE - hubCam.y;
+  var W = tw*TILE, H = th*TILE;
+  var roofH = Math.max(20, H * 0.46);
+  var eave = 7, base = y + H;
+
+  ctx.fillStyle = "rgba(0,0,0,0.28)";
+  ctx.beginPath();
+  ctx.ellipse(x + W/2, base - 3, W * 0.54, 9, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Plaster walls with a timber frame.
+  ctx.fillStyle = "#e8d6b0";
+  ctx.fillRect(x + eave, y + roofH, W - eave*2, H - roofH);
+  ctx.fillStyle = "#7a4a24";
+  ctx.fillRect(x + eave, y + roofH, W - eave*2, 3);
+  ctx.fillRect(x + eave, y + roofH, 3, H - roofH);
+  ctx.fillRect(x + W - eave - 3, y + roofH, 3, H - roofH);
+  ctx.fillRect(x + W/2 - 2, y + roofH + 3, 4, H - roofH - 3);
+  ctx.fillStyle = "rgba(0,0,0,0.10)";
+  ctx.fillRect(x + eave, base - 6, W - eave*2, 6);
+
+  // Door and windows.
+  ctx.fillStyle = "#5a3216";
+  ctx.fillRect(x + W/2 - 8, base - 22, 16, 22);
+  ctx.fillStyle = "#f6c744";
+  ctx.fillRect(x + W/2 + 3, base - 13, 3, 3);
+  ctx.fillStyle = "#8fd3ff";
+  ctx.fillRect(x + W*0.26 - 8, y + roofH + 12, 16, 12);
+  ctx.fillRect(x + W*0.74 - 8, y + roofH + 12, 16, 12);
+  ctx.strokeStyle = "#6e2318"; ctx.lineWidth = 2;
+  ctx.strokeRect(x + W*0.26 - 8, y + roofH + 12, 16, 12);
+  ctx.strokeRect(x + W*0.74 - 8, y + roofH + 12, 16, 12);
+
+  // Gabled roof.
+  ctx.fillStyle = "#b8432f";
+  ctx.beginPath();
+  ctx.moveTo(x - 5, y + roofH);
+  ctx.lineTo(x + W/2, y - 4);
+  ctx.lineTo(x + W + 5, y + roofH);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "rgba(0,0,0,0.18)";
+  ctx.beginPath();
+  ctx.moveTo(x + W/2, y - 4);
+  ctx.lineTo(x + W + 5, y + roofH);
+  ctx.lineTo(x + W/2, y + roofH);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = "#6e2318"; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x - 5, y + roofH);
+  ctx.lineTo(x + W/2, y - 4);
+  ctx.lineTo(x + W + 5, y + roofH);
+  ctx.stroke();
+}
+
 function renderHub(){
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, VIEW_W, VIEW_H);
 
   var t0 = Math.floor(hubCam.x / TILE), t1 = Math.ceil((hubCam.x + VIEW_W) / TILE);
   var r0 = Math.floor(hubCam.y / TILE), r1 = Math.ceil((hubCam.y + VIEW_H) / TILE);
+  // Ground layer: grass everywhere, with dirt avenues and the plaza.
   for (var ty = r0; ty < r1; ty++){
     for (var tx = t0; tx < t1; tx++){
       if (tx < 0 || ty < 0 || tx >= HUB_TW || ty >= HUB_TH) continue;
       var sx = tx*TILE - hubCam.x, sy = ty*TILE - hubCam.y;
-      if (hubGrid[ty][tx] === 1) ctx.drawImage(GFX.wall, sx, sy, TILE, TILE);
-      else ctx.drawImage(GFX.floor, sx, sy, TILE, TILE);
+      var gv = hubGrid[ty][tx];
+      if (gv === 1) ctx.drawImage(GFX.wall, sx, sy, TILE, TILE);
+      else if (gv === 6) ctx.drawImage(GFX.path, sx, sy, TILE, TILE);
+      else ctx.drawImage(GFX.grass, sx, sy, TILE, TILE);
     }
   }
+
+  // Decoration layer.
   for (var dy = r0; dy < r1; dy++){
     for (var dx = t0; dx < t1; dx++){
       if (dx < 0 || dy < 0 || dx >= HUB_TW || dy >= HUB_TH) continue;
       var v = hubGrid[dy][dx];
-      if (v !== 2 && v !== 3 && v !== 5) continue;
       var cx = dx*TILE - hubCam.x + TILE/2, cy = dy*TILE - hubCam.y + TILE/2;
       if (v === 2){ shadow(cx, cy + 12, 9); drawSprite("tree", cx, cy - 8, TILE + 8); }
-      else if (v === 3){ drawSprite("fountain", cx, cy, TILE); }
-      else { shadow(cx, cy + 12, 8); drawSprite("statue", cx, cy - 2, TILE + 2); }
+      else if (v === 5){ shadow(cx, cy + 12, 8); drawSprite("statue", cx, cy - 2, TILE + 2); }
+      else if (v === 8) drawFence(cx, cy);
+      else if (v === 9){ shadow(cx, cy + 12, 9); drawSprite("well", cx, cy - 4, TILE); }
+      else if (v === 10){ shadow(cx, cy + 12, 6); drawSprite("lamp", cx, cy - 6, TILE + 6); }
+      else if (v === 11){ shadow(cx, cy + 12, 12); drawSprite("stall", cx, cy - 2, TILE + 6); }
+      else if (v === 12){ drawSprite("bush", cx, cy, TILE); }
     }
   }
+
+  // Cottages.
+  for (var hh = 0; hh < houses.length; hh++){
+    var h = houses[hh];
+    drawHouse(h.x, h.y, h.w, h.h);
+  }
+
+  // Fountain in the square (single sprite spanning its 2x2 footprint).
+  var fx = fountainPos.x - hubCam.x, fy = fountainPos.y - hubCam.y;
+  shadow(fx, fy + 18, 26);
+  var fg = ctx.createRadialGradient(fx, fy, 4, fx, fy, 46);
+  fg.addColorStop(0, "rgba(127,216,255,0.35)");
+  fg.addColorStop(1, "rgba(127,216,255,0)");
+  ctx.fillStyle = fg;
+  ctx.beginPath(); ctx.arc(fx, fy, 46, 0, Math.PI*2); ctx.fill();
+  drawSprite("fountain", fx, fy, TILE * 2);
 
   var ppx = portalPos.x - hubCam.x, ppy = portalPos.y - hubCam.y;
   var pulse = 1 + Math.sin(performance.now() / 220) * 0.12;
