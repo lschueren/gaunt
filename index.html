@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Leos Lounge</title>
 <style>
   :root{ --ink:#e9ecf5; --dim:#8b93a7; --gold:#f6c744; }
@@ -22,6 +22,11 @@
   .overlay h2{ margin:0; font-size:clamp(22px,5vw,44px); letter-spacing:6px; color:#ff6b5a; }
   .overlay p{ margin:0; color:var(--dim); line-height:1.7; max-width:80%; font-size:14px; }
   .overlay .keys b{ color:var(--ink); }
+  .keys{ display:grid; grid-template-columns:auto auto; gap:7px 20px; justify-content:center; text-align:left; }
+  .keys p{ display:contents; }
+  .keys .k{ color:var(--ink); text-align:right; white-space:nowrap; }
+  .keys .d{ color:var(--dim); }
+  .keys .full{ grid-column:1 / -1; text-align:center; color:var(--dim); }
   button.play{ margin-top:6px; padding:12px 26px; font:inherit; font-size:16px; letter-spacing:2px;
     color:#0a0c14; background:var(--gold); border:none; border-radius:6px; cursor:pointer;
     box-shadow:0 4px 0 #a9821a; }
@@ -39,19 +44,14 @@
   #chat{ width:min(560px,80%); padding:10px 14px; font:inherit; font-size:15px; color:var(--ink);
     background:#10141fee; border:2px solid var(--gold); border-radius:6px; outline:none;
     box-shadow:0 8px 30px #000; }
-  #paypal{ position:fixed; right:16px; bottom:16px; z-index:20; text-decoration:none;
-    display:flex; align-items:center; gap:8px; font-size:13px; letter-spacing:1px; color:#fff;
-    background:#0070ba; padding:10px 16px; border-radius:24px; font-weight:700;
-    box-shadow:0 4px 0 #003087, 0 8px 24px #00000088; }
-  #paypal:hover{ background:#009cde; }
-  #paypal:active{ transform:translateY(2px); box-shadow:0 2px 0 #003087; }
-  #paypal .pp{ font-style:italic; font-weight:800; letter-spacing:0;
-    background:#fff; color:#003087; border-radius:3px; padding:0 4px; }
   #login .name{ margin-top:4px; }
   #login input{ padding:11px 16px; font:inherit; font-size:16px; letter-spacing:1px; color:var(--ink);
     background:#10141fee; border:2px solid var(--gold); border-radius:6px; outline:none;
     text-align:center; width:min(280px,70vw); }
   #login .status{ color:var(--dim); font-size:13px; letter-spacing:1px; min-height:18px; }
+  #login .dl{ margin-top:14px; font-size:12px; letter-spacing:1px; color:var(--dim); }
+  #login .dl a{ color:var(--dim); text-decoration:none; border-bottom:1px dotted #3a435c; }
+  #login .dl a:hover{ color:var(--gold); border-bottom-color:var(--gold); }
   button.play:disabled{ opacity:.4; cursor:default; box-shadow:0 4px 0 #5c4a12; }
   button.ghost{ margin-top:4px; padding:10px 20px; font:inherit; font-size:14px; letter-spacing:2px;
     color:var(--ink); background:transparent; border:2px solid #2c3549; border-radius:6px; cursor:pointer; }
@@ -59,6 +59,8 @@
   #chatlog{ position:absolute; left:12px; bottom:12px; z-index:6; display:none; flex-direction:column;
     gap:2px; width:min(440px,50%); font-size:13px; line-height:1.45; pointer-events:none;
     text-shadow:0 2px 0 #000; }
+  #chatlog:not(:empty){ padding:8px 10px; border-radius:8px;
+    background:rgba(6,8,14,0.55); border:1px solid rgba(255,255,255,0.08); }
   #chatlog.on{ display:flex; }
   #chatlog .line{ color:#cdd4e4; overflow-wrap:anywhere; }
   #chatlog .line b{ color:var(--gold); }
@@ -66,9 +68,135 @@
     font-size:13px; letter-spacing:1px; color:var(--dim); text-shadow:0 2px 0 #000; }
   #online.on{ display:block; }
   #online b{ color:#7ef08a; }
-  #hubhint{ position:absolute; left:0; right:0; bottom:16px; display:none; z-index:6; text-align:center;
-    color:var(--gold); letter-spacing:2px; font-size:14px; text-shadow:0 2px 0 #000; }
+  #hubhint{ position:absolute; left:50%; transform:translateX(-50%); top:16px; display:none; z-index:6;
+    color:var(--gold); letter-spacing:2px; font-size:14px; text-shadow:0 2px 0 #000;
+    padding:6px 14px; border-radius:8px; background:rgba(6,8,14,0.55);
+    border:1px solid rgba(255,255,255,0.08); }
   #hubhint.on{ display:block; }
+  #wallet{ color:var(--dim); letter-spacing:2px; font-size:16px; }
+  #wallet b{ color:var(--gold); }
+  /* Both catalogues render into the same scrolling panel; the tab bar above
+     decides which one is on show. */
+  .shoppanel{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px;
+    width:min(860px,94%); height:min(44vh,420px); overflow-y:auto; align-content:start;
+    padding:2px 8px 2px 2px; scrollbar-width:thin; scrollbar-color:#3a465e #0b0e16; }
+  .shoppanel.hidden{ display:none; }
+  .shoppanel::-webkit-scrollbar{ width:9px; }
+  .shoppanel::-webkit-scrollbar-thumb{ background:#3a465e; border-radius:6px; }
+  .shoppanel::-webkit-scrollbar-track{ background:#0b0e16; border-radius:6px; }
+  #shopfilter{ width:min(860px,94%); padding:9px 13px; font:inherit; font-size:14px;
+    letter-spacing:1px; color:var(--ink); background:#10141fee;
+    border:2px solid #2c3549; border-radius:8px; outline:none; }
+  #shopfilter:focus{ border-color:#4a5a7a; }
+  #shopfilter::placeholder{ color:#5f6a80; letter-spacing:1px; }
+  /* Browser-style tabs: weapon types and upgrades are two views of one shop,
+     each with its own tally baked into the tab label. The active tab is drawn
+     over the rule beneath it, exactly like a browser's tab strip. */
+  #shoptabs{ display:flex; gap:6px; width:min(860px,94%); align-items:flex-end;
+    padding:0 4px; border-bottom:2px solid #2c3549; }
+  .shoptab{ font:inherit; font-size:14px; font-weight:700; letter-spacing:3px;
+    color:var(--dim); background:#0b0e16ee; cursor:pointer;
+    border:2px solid #2c3549; border-bottom:none; border-radius:10px 10px 0 0;
+    padding:8px 18px 6px; margin-bottom:-2px; }
+  .shoptab:hover{ color:var(--ink); }
+  .shoptab.on{ color:var(--gold); background:#161c2bee; border-color:#4a5a7a; }
+  .shoptab span{ display:block; font-size:11px; font-weight:400; letter-spacing:1px;
+    color:#7f93c0; margin-top:2px; }
+  .shoptab.on span{ color:var(--gold); }
+  .shopitem .info .pat{ color:#7f93c0; font-size:12px; letter-spacing:1px; }
+  .shopitem.active{ border-color:var(--gold); background:#1d170cee; }
+  .shopitem .info .dmg{ color:#e2705a; }
+  .shopitem{ display:flex; align-items:center; justify-content:space-between; gap:14px;
+    background:#10141fee; border:2px solid #2c3549; border-radius:8px; padding:10px 14px; text-align:left; }
+  .shopitem.owned{ border-color:#3f7a48; background:#0f1a13ee; }
+  .shopitem .info{ font-size:13px; line-height:1.5; }
+  .shopitem .info b{ color:var(--ink); letter-spacing:1px; }
+  .shopitem .lvl{ color:var(--gold); }
+  .shopitem .desc{ color:var(--dim); }
+  .shopitem .sw{ display:inline-block; width:24px; text-align:center; font-size:17px;
+    margin-right:6px; vertical-align:-3px; }
+  button.buy{ padding:9px 14px; font:inherit; font-size:14px; letter-spacing:1px; color:#0a0c14;
+    background:var(--gold); border:none; border-radius:6px; cursor:pointer; min-width:84px;
+    box-shadow:0 3px 0 #a9821a; }
+  button.buy:active{ transform:translateY(1px); box-shadow:0 2px 0 #a9821a; }
+  button.buy:disabled{ opacity:.4; cursor:default; box-shadow:0 3px 0 #5c4a12; }
+  /* The catalogue runs to well over a hundred entries, so the shop panel is
+     laid out from the top and the list scrolls inside it; on a short or narrow
+     screen the panel itself can scroll too. */
+  #shop{ justify-content:flex-start; padding:3vh 0 2vh; gap:10px; overflow-y:auto; }
+  #shop h1{ font-size:clamp(22px,4.4vw,42px); letter-spacing:6px; }
+  @media (max-width:700px){
+    .shoppanel{ grid-template-columns:1fr; height:min(50vh,420px); }
+    .shoptab{ letter-spacing:2px; padding:8px 12px 6px; }
+    #shop p{ display:none; }
+  }
+  @media (max-height:640px){
+    .shoppanel{ height:32vh; }
+    #shop p{ display:none; }
+  }
+
+  /* ============ PHONE TOUCH CONTROLS (never shown on desktop) ============ */
+  .mobile-controls{
+    display:none; position:fixed; inset:0; z-index:50; pointer-events:none;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+  }
+  .touch-only{ display:none; }
+  body.touch-device .touch-only{ display:block; }
+
+  #rotate-notice{
+    display:none; position:fixed; inset:0; z-index:60; background:#070810;
+    align-items:center; justify-content:center; text-align:center;
+    color:var(--gold); letter-spacing:3px; font-size:17px; line-height:1.9;
+    text-transform:uppercase; padding:20px;
+  }
+  #rotate-notice .rot{ font-size:52px; letter-spacing:0; }
+
+  /* Phones are at most ~932px wide in landscape; tablets are wider, so this
+     targets phones only. Paired with body.touch-device (set by JS when the
+     device reports touch support) so desktop never shows any controls. */
+  @media (max-width:1000px) and (orientation:landscape){
+    body.touch-device .mobile-controls{ display:block; }
+  }
+  @media (max-width:1000px) and (orientation:portrait){
+    body.touch-device #rotate-notice{ display:flex; }
+  }
+
+  .mobile-controls button.btn{
+    position:absolute; display:flex; align-items:center; justify-content:center;
+    background:rgba(20,26,42,.45); border:2px solid rgba(246,199,68,.4);
+    color:var(--gold); border-radius:14px; font:inherit; font-size:12px;
+    letter-spacing:1px; opacity:.75; text-shadow:0 2px 0 #000;
+    -webkit-appearance:none; appearance:none;
+    pointer-events:auto; touch-action:none; cursor:default;
+  }
+  .mobile-controls button.btn.pressed{ background:rgba(246,199,68,.3); border-color:var(--gold); opacity:1; }
+
+  /* D-pad, bottom-left corner */
+  .dpad .b{ width:54px; height:54px; font-size:19px; }
+  .dpad .up{ left:78px; bottom:80px; }
+  .dpad .down{ left:78px; bottom:12px; }
+  .dpad .left{ left:12px; bottom:46px; }
+  .dpad .right{ left:144px; bottom:46px; }
+
+  /* Aim & fire stick, bottom-right (twin-stick style: hold to aim, auto-fires) */
+  .aimzone{
+    position:absolute; right:16px; bottom:16px; width:126px; height:126px;
+    border-radius:50%; border:2px solid rgba(246,199,68,.35);
+    background:rgba(20,26,42,.35); opacity:.8;
+    pointer-events:auto; touch-action:none;
+  }
+  .aimstick{
+    position:absolute; left:50%; top:50%; width:54px; height:54px;
+    margin:-27px 0 0 -27px; border-radius:50%;
+    background:rgba(246,199,68,.45); border:2px solid var(--gold);
+    pointer-events:none;
+  }
+
+  /* SHOP / CHAT / PAUSE, stacked on the right edge above the stick */
+  .mbtns .b{ right:16px; width:66px; height:40px; }
+  .mbtns .b1{ bottom:156px; }
+  .mbtns .b2{ bottom:202px; }
+  .mbtns .b3{ bottom:248px; }
 </style>
 </head>
 <body>
@@ -81,14 +209,27 @@
   </div>
   <div id="online">ONLINE <b>1</b></div>
   <div id="chatlog"></div>
-  <div id="hubhint">STEP INTO THE GATE TO ENTER THE GAUNTLET · LEO'S LOUNGE</div>
+  <div id="hubhint"></div>
   <div id="chatwrap"><input id="chat" maxlength="120" autocomplete="off" spellcheck="false" placeholder="Say something… (Enter to send)"></div>
   <div id="login" class="overlay">
     <h1>LEOS LOUNGE</h1>
     <p>A cosy shared village. Wander the square, chat with the locals,<br>then step through the gate into the Gauntlet when you dare.</p>
-    <div class="name"><input id="nameinput" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Choose a name…"></div>
+    <div class="keys">
+      <p><span class="k"><b>WASD</b> / <b>Arrows</b></span><span class="d">move</span></p>
+      <p><span class="k"><b>Mouse</b></span><span class="d">aim</span></p>
+      <p><span class="k"><b>Click</b> / <b>Space</b></span><span class="d">shoot</span></p>
+      <p><span class="k"><b>Enter</b></span><span class="d">open chat &nbsp;·&nbsp; type &amp; press <b>Enter</b> to send &nbsp;·&nbsp; <b>Esc</b> to cancel</span></p>
+      <p><span class="k"><b>E</b></span><span class="d">enter the shop (in the village)</span></p>
+      <p><span class="k"><b>Esc</b></span><span class="d">pause</span></p>
+      <p><span class="d full touch-only">On a phone: rotate to landscape — left pad moves, right stick aims &amp; shoots.</span></p>
+      <p><span class="d full">Walk into the gate to enter the Gauntlet.</span></p>
+    </div>
+    <div class="name"><input id="userinput" maxlength="16" autocomplete="username" spellcheck="false" placeholder="Username…"></div>
+    <div class="name"><input id="passinput" type="password" maxlength="32" autocomplete="current-password" placeholder="Password…"></div>
     <div class="status" id="loginstatus">connecting to the lounge…</div>
-    <button class="play" id="joinbtn" disabled>ENTER THE VILLAGE</button>
+    <button class="play" id="loginbtn" disabled>LOG IN</button>
+    <button class="ghost" id="signupbtn" disabled>CREATE ACCOUNT</button>
+    <p class="dl"><a href="/index.html">client source</a> · <a href="/go-server.go">server source</a></p>
   </div>
   <div id="over" class="overlay hidden">
     <h2>YOU DIED</h2>
@@ -97,11 +238,40 @@
   </div>
   <div id="paused" class="overlay hidden">
     <h1>PAUSED</h1>
-    <p>Press <b>Esc</b> to resume</p>
+    <p>Press <b>Esc</b> (or the pause button) to resume</p>
     <button class="ghost" id="leavebtn">RETURN TO VILLAGE</button>
   </div>
+  <div id="shop" class="overlay hidden">
+    <h1>LEO'S SHOP</h1>
+    <p>Spend the gold you looted in the Gauntlet on weapon types and upgrades.</p>
+    <div id="wallet">GOLD <b id="shopgold">0</b></div>
+    <input id="shopfilter" placeholder="Search the catalogue…" autocomplete="off" spellcheck="false">
+    <div id="shoptabs" role="tablist">
+      <button class="shoptab on" id="tab-weapons">WEAPON TYPES<span id="wepcount"></span></button>
+      <button class="shoptab" id="tab-upgrades">UPGRADES<span id="shopcount"></span></button>
+    </div>
+    <div id="shopweapons" class="shoppanel"></div>
+    <div id="shopitems" class="shoppanel hidden"></div>
+    <button class="ghost" id="shopclose">LEAVE THE SHOP</button>
+  </div>
 </div>
-<a id="paypal" href="https://www.paypal.com/donate/?business=lschueren%40gmail.com&no_recurring=0&item_name=Support%20Leos%20Lounge&currency_code=EUR" target="_blank" rel="noopener noreferrer"><span class="pp">PayPal</span> Donate</a>
+
+<!-- ===== Phone controls: shown ONLY on touch phones in landscape (see CSS) ===== -->
+<div id="rotate-notice"><div><span class="rot">🔄</span><br>Rotate your phone to landscape<br>to play with touch controls</div></div>
+<div class="mobile-controls" id="mobile-controls">
+  <div class="dpad">
+    <button class="btn b up" data-key="arrowup">▲</button>
+    <button class="btn b down" data-key="arrowdown">▼</button>
+    <button class="btn b left" data-key="arrowleft">◀</button>
+    <button class="btn b right" data-key="arrowright">▶</button>
+  </div>
+  <div class="mbtns">
+    <button class="btn b b3" id="mb-shop">SHOP</button>
+    <button class="btn b b2" id="mb-chat">CHAT</button>
+    <button class="btn b b1" id="mb-pause">II</button>
+  </div>
+  <div class="aimzone" id="aimzone"><div class="aimstick" id="aimstick"></div></div>
+</div>
 
 <script>
 (function(){
@@ -121,436 +291,132 @@ var PALETTE = {
   "e": "#3a3f4b", "d": "#22252d", "u": "#7fd8ff"
 };
 
+// ---------------------------------------------------------------------------
+// Tile & prop art (palette-indexed pixel art built to offscreen canvases).
+// Kept from the original village/Gauntlet art: transparent, crisp, cohesive.
+// ---------------------------------------------------------------------------
 var SPRITES = {
-  hero_down: [
-    "...kkkkkkkkkk...",
-    "..kcccccccccck..",
-    "..kcccccccccck..",
-    "...kcccccccck...",
-    "...kcssssssck...",
-    "...kskssssksk...",
-    "...kssssssssk...",
-    "...kcssssssck...",
-    "..kkbbbbbbbbkk..",
-    ".kbbbbbbbbbbbbk.",
-    ".kbbyyyyyyyybbk.",
-    ".kbbbbbbbbbbbbk.",
-    "..kbbbbbbbbbbk..",
-    "..kbbbbbbbbbbk..",
-    "..kNNNkkkkNNNk..",
-    "..kNNNkkkkNNNk.."
-  ],
-  hero_up: [
-    "...kkkkkkkkkk...",
-    "..kcccccccccck..",
-    "..kcccccccccck..",
-    "...kcccccccck...",
-    "...kcccccccck...",
-    "...kcccccccck...",
-    "...kcccccccck...",
-    "...kcccccccck...",
-    "..kkbbbbbbbbkk..",
-    ".kbbbbbbbbbbbbk.",
-    ".kbbyyyyyyyybbk.",
-    ".kbbbbbbbbbbbbk.",
-    "..kbbbbbbbbbbk..",
-    "..kbbbbbbbbbbk..",
-    "..kNNNkkkkNNNk..",
-    "..kNNNkkkkNNNk.."
-  ],
-  hero_side: [
-    ".....kkkkkk.....",
-    "....kcccccck....",
-    "...kccccccck....",
-    "...kcccssssk....",
-    "...kcccksssk....",
-    "...kcccssssk....",
-    "...kccccccsk....",
-    "....kccccck.....",
-    "...kbbbbbbk.....",
-    "..kbbbbbbbbk....",
-    "..kbyyyybbbk....",
-    "..kbbbbbbbbk....",
-    "...kbbbbbbk.....",
-    "...kbbbbbbk.....",
-    "...kNNNNNNk.....",
-    "...kNNNNNNk....."
-  ],
-  goblin: [
-    "................",
-    "......kkkk......",
-    ".....kggggk.....",
-    "....kggggggk....",
-    "....kgeggegk....",
-    "....kggggggk....",
-    ".....kgNNgk.....",
-    "....kkggggkk....",
-    "...kggggggggk...",
-    "..kggggggggggk..",
-    "..kgNNNNNNNNgk..",
-    "..kggggggggggk..",
-    "..kggggggggggk..",
-    "...kggggggggk...",
-    "...kgggkkgggk...",
-    "...kNNNkkNNNk..."
-  ],
-  ghost: [
-    "......kkkk......",
-    "....kkppppkk....",
-    "...kppppppppk...",
-    "..kppppppppppk..",
-    "..kppppppppppk..",
-    "..kpwppppppwpk..",
-    "..kppppppppppk..",
-    "..kppppppppppk..",
-    "..kppppppppppk..",
-    "..kppppppppppk..",
-    "..kppppppppppk..",
-    "..kppppppppppk..",
-    "...kppppppppk...",
-    "...kppkppkppk...",
-    "...kpkkppkkpk...",
-    "...kkk.kk.kkk..."
-  ],
-  demon: [
-    "..k.........k...",
-    "..kk.......kk...",
-    "...kkkkkkkkkk...",
-    "..krrrrrrrrrrk..",
-    "..krrrrrrrrrrk..",
-    "..kryrrrrrryrk..",
-    "..krrrrrrrrrrk..",
-    "..krrrkkkkrrrk..",
-    "..krrrrrrrrrrk..",
-    "...krrrrrrrrk...",
-    "..krrrrrrrrrrk..",
-    "..krrrrrrrrrrk..",
-    "...krrrrrrrrk...",
-    "...krrrrrrrrk...",
-    "...krrkkkkrrk...",
-    "...kRRkkkkRRk..."
-  ],
   food: [
-    "................",
-    "................",
-    "................",
-    "................",
-    "......kkk.......",
-    ".....knnnk......",
-    "....knnnnnk.....",
-    "...knnrnnnnk....",
-    "..knnrrnnnnnk...",
-    "..krrrnnnnnnk...",
-    "..krrrrnnnnk....",
-    "...krrrrrrk.....",
-    "....krrrrk......",
-    ".....kkkk.......",
-    "................",
-    "................"
+    "................","................","................","................",
+    "......kkk.......",".....knnnk......","....knnnnnk.....","...knnrnnnnk....",
+    "..knnrrnnnnnk...","..krrrnnnnnnk...","..krrrrnnnnk....","...krrrrrrk.....",
+    "....krrrrk......",".....kkkk.......","................","................"
   ],
   treasure: [
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
-    ".....kkkkk......",
-    "....kyyyyyk.....",
-    "...kyyyyyyyk....",
-    "...kyyYyyYyk....",
-    "..kyyyyyyyyyk...",
-    "..kyYyyYyyYyk...",
-    "..kyyyyyyyyyk...",
-    ".kyyyyyyyyyyyk..",
-    ".kYYYYYYYYYYYk..",
-    "..kkkkkkkkkkk...",
-    "................"
+    "................","................","................","................",
+    "................",".....kkkkk......","....kyyyyyk.....","...kyyyyyyyk....",
+    "...kyyYyyYyk....","..kyyyyyyyyyk...","..kyYyyYyyYyk...","..kyyyyyyyyyk...",
+    ".kyyyyyyyyyyyk..",".kYYYYYYYYYYYk..","..kkkkkkkkkkk...","................"
   ],
   key: [
-    "................",
-    "................",
-    "................",
-    "................",
-    "......kkk.......",
-    ".....kyyyk......",
-    ".....ky.ky......",
-    ".....kyyyk......",
-    "......kyk.......",
-    "......kyk.......",
-    "......kykk......",
-    "......kykk......",
-    "......kyk.......",
-    "......kkk.......",
-    "................",
-    "................"
+    "................","................","................","................",
+    "......kkk.......",".....kyyyk......",".....ky.ky......",".....kyyyk......",
+    "......kyk.......","......kyk.......","......kykk......","......kykk......",
+    "......kyk.......","......kkk.......","................","................"
   ],
   bolt: [
-    "..kkkk..",
-    ".kyyyyk.",
-    "kyyyyyyk",
-    "kyyyyyyk",
-    "kyyyyyyk",
-    "kyyyyyyk",
-    ".kyyyyk.",
-    "..kkkk.."
+    "..kkkk..",".kyyyyk.","kyyyyyyk","kyyyyyyk",
+    "kyyyyyyk","kyyyyyyk",".kyyyyk.","..kkkk.."
   ],
   wall: [
-    "CCCCCCCCCCCCCCCC",
-    "cccCcccccccCcccc",
-    "cccCcccccccCcccc",
-    "cccCcccccccCcccc",
-    "CCCCCCCCCCCCCCCC",
-    "cccccccCcccccccC",
-    "cccccccCcccccccC",
-    "cccccccCcccccccC",
-    "CCCCCCCCCCCCCCCC",
-    "cccCcccccccCcccc",
-    "cccCcccccccCcccc",
-    "cccCcccccccCcccc",
-    "CCCCCCCCCCCCCCCC",
-    "cccccccCcccccccC",
-    "cccccccCcccccccC",
-    "cccccccCcccccccC"
+    "CCCCCCCCCCCCCCCC","cccCcccccccCcccc","cccCcccccccCcccc","cccCcccccccCcccc",
+    "CCCCCCCCCCCCCCCC","cccccccCcccccccC","cccccccCcccccccC","cccccccCcccccccC",
+    "CCCCCCCCCCCCCCCC","cccCcccccccCcccc","cccCcccccccCcccc","cccCcccccccCcccc",
+    "CCCCCCCCCCCCCCCC","cccccccCcccccccC","cccccccCcccccccC","cccccccCcccccccC"
   ],
   floor: [
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dedddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddedddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "ddddeddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddedddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dedddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddddddddddd",
-    "dddddddedddddddd"
+    "dddddddddddddddd","dddddddddddddddd","dedddddddddddddd","dddddddddddddddd",
+    "dddddddddddedddd","dddddddddddddddd","dddddddddddddddd","ddddeddddddddddd",
+    "dddddddddddddddd","dddddddddddedddd","dddddddddddddddd","dddddddddddddddd",
+    "dedddddddddddddd","dddddddddddddddd","dddddddddddddddd","dddddddedddddddd"
   ],
   grass: [
-    "gggggggggggggggg",
-    "gggggggggggGgggg",
-    "gGgggggggggggggg",
-    "gggggggGgggggggg",
-    "gggggggggggggggg",
-    "ggggggggggggGggg",
-    "ggGggggggggggggg",
-    "gggggggggggggggg",
-    "gggggggggggggggg",
-    "gggggggGgggggggg",
-    "gggggggggggggggg",
-    "gGgggggggggggggG",
-    "gggggggggggggggg",
-    "ggggggggggGggggg",
-    "ggggGggggggggggg",
-    "gggggggggggggggg"
+    "gggggggggggggggg","gggggggggggGgggg","gGgggggggggggggg","gggggggGgggggggg",
+    "gggggggggggggggg","ggggggggggggGggg","ggGggggggggggggg","gggggggggggggggg",
+    "gggggggggggggggg","gggggggGgggggggg","gggggggggggggggg","gGgggggggggggggG",
+    "gggggggggggggggg","ggggggggggGggggg","ggggGggggggggggg","gggggggggggggggg"
   ],
   path: [
-    "nnnnnnnnnnnnnnnn",
-    "nnnSnnnnNnnnnnnn",
-    "nnnnnnnnnnnnnnnn",
-    "nNnnnnnnnnnSnnnn",
-    "nnnnnnnnnnnnnnnn",
-    "nnnnnnSnnnnnnnnn",
-    "nnnnnnnnnnnNnnnn",
-    "Snnnnnnnnnnnnnnn",
-    "nnnnNnnnnnnnnnnn",
-    "nnnnnnnnnnSnnnnn",
-    "nnnnnnnnnnnnnnnn",
-    "nnnSnnnnnnnnNnnn",
-    "nnnnnnnnnnnnnnnn",
-    "nnnnnnnnSnnnnnnn",
-    "nNnnnnnnnnnnnnnn",
-    "nnnnnnnnnnnnSnnn"
+    "nnnnnnnnnnnnnnnn","nnnSnnnnNnnnnnnn","nnnnnnnnnnnnnnnn","nNnnnnnnnnnSnnnn",
+    "nnnnnnnnnnnnnnnn","nnnnnnSnnnnnnnnn","nnnnnnnnnnnNnnnn","Snnnnnnnnnnnnnnn",
+    "nnnnNnnnnnnnnnnn","nnnnnnnnnnSnnnnn","nnnnnnnnnnnnnnnn","nnnSnnnnnnnnNnnn",
+    "nnnnnnnnnnnnnnnn","nnnnnnnnSnnnnnnn","nNnnnnnnnnnnnnnn","nnnnnnnnnnnnSnnn"
   ],
   bush: [
-    "................",
-    "................",
-    "......GGGG......",
-    "....GGggggGG....",
-    "...GgrggggrgG...",
-    "..GggggggggggG..",
-    "..GgggyggggygG..",
-    ".GggggggggggggG.",
-    ".GggggggggggggG.",
-    "..GggggggggggG..",
-    "...GggggggggG...",
-    "....GGggggGG....",
-    "......GGGG......",
-    "................",
-    "................",
-    "................"
+    "................","................","......GGGG......","....GGggggGG....",
+    "...GgrggggrgG...","..GggggggggggG..","..GgggyggggygG..",".GggggggggggggG.",
+    ".GggggggggggggG.","..GggggggggggG..","...GggggggggG...","....GGggggGG....",
+    "......GGGG......","................","................","................"
   ],
   lamp: [
-    ".......yy.......",
-    "......yyyy......",
-    "......yyyy......",
-    "......yYyY......",
-    ".......kk.......",
-    ".......kk.......",
-    ".......kk.......",
-    ".......kk.......",
-    ".......kk.......",
-    ".......kk.......",
-    ".......kk.......",
-    ".......kk.......",
-    "......kkkk......",
-    ".....kkkkkk.....",
-    "................",
-    "................"
+    ".......yy.......","......yyyy......","......yyyy......","......yYyY......",
+    ".......kk.......",".......kk.......",".......kk.......",".......kk.......",
+    ".......kk.......",".......kk.......",".......kk.......",".......kk.......",
+    "......kkkk......",".....kkkkkk.....","................","................"
   ],
   well: [
-    "................",
-    "....kkkkkkkk....",
-    "...kcccccccck...",
-    "...kcCCCCCCck...",
-    "...kcCuuuuCck...",
-    "...kcCuuuuCck...",
-    "...kcCCCCCCck...",
-    "...kcccccccck...",
-    "....kkkkkkkk....",
-    "......kkkk......",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................"
+    "................","....kkkkkkkk....","...kcccccccck...","...kcCCCCCCck...",
+    "...kcCuuuuCck...","...kcCuuuuCck...","...kcCCCCCCck...","...kcccccccck...",
+    "....kkkkkkkk....","......kkkk......","................","................",
+    "................","................","................","................"
   ],
   stall: [
-    "...kkkkkkkkkk...",
-    "..krrwwrrwwrrk..",
-    ".krrwwrrwwrrwwk.",
-    ".kkkkkkkkkkkkkk.",
-    "..knnnnnnnnnnk..",
-    "..knNnnnnnnNnk..",
-    "..knnnnnnnnnnk..",
-    "..kkkkkkkkkkkk..",
-    "..kk........kk..",
-    "..kk........kk..",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................"
+    "...kkkkkkkkkk...","..krrwwrrwwrrk..",".krrwwrrwwrrwwk.",".kkkkkkkkkkkkkk.",
+    "..knnnnnnnnnnk..","..knNnnnnnnNnk..","..knnnnnnnnnnk..","..kkkkkkkkkkkk..",
+    "..kk........kk..","..kk........kk..","................","................",
+    "................","................","................","................"
   ],
   generator: [
-    "................",
-    "..kk........kk..",
-    ".kppk......kppk.",
-    ".kppkkkkkkkkppk.",
-    "..kppppppppppk..",
-    "..kppwppppwppk..",
-    "..kppppppppppk..",
-    "..kppkkkkkkppk..",
-    "..kppppppppppk..",
-    "...kppppppppk...",
-    "...kppppppppk...",
-    "....kkppppkk....",
-    "......kppk......",
-    "......kppk......",
-    ".....kkppkk.....",
-    "................"
+    "................","..kk........kk..",".kppk......kppk.",".kppkkkkkkkkppk.",
+    "..kppppppppppk..","..kppwppppwppk..","..kppppppppppk..","..kppkkkkkkppk..",
+    "..kppppppppppk..","...kppppppppk...","...kppppppppk...","....kkppppkk....",
+    "......kppk......","......kppk......",".....kkppkk.....","................"
   ],
   exit: [
-    "YYYYYYYYYYYYYYYY",
-    "YkkkkkkkkkkkkkkY",
-    "YknnnnnnnnnnnnkY",
-    "YknuuuuuuuuuunkY",
-    "YknuuuuuuuuuunkY",
-    "YknuuuuuuuuuunkY",
-    "YknuuuuuuuuuunkY",
-    "YknuuuuuuuuuunkY",
-    "YknuuuuuuuuuunkY",
-    "YknuuuuuuuuuunkY",
-    "YknuuuuuuuuuunkY",
-    "YknuuuuuuuuuunkY",
-    "YknuuuuuuuuuunkY",
-    "YknnnnnnnnnnnnkY",
-    "YkkkkkkkkkkkkkkY",
-    "YYYYYYYYYYYYYYYY"
+    "YYYYYYYYYYYYYYYY","YkkkkkkkkkkkkkkY","YknnnnnnnnnnnnkY","YknuuuuuuuuuunkY",
+    "YknuuuuuuuuuunkY","YknuuuuuuuuuunkY","YknuuuuuuuuuunkY","YknuuuuuuuuuunkY",
+    "YknuuuuuuuuuunkY","YknuuuuuuuuuunkY","YknuuuuuuuuuunkY","YknuuuuuuuuuunkY",
+    "YknuuuuuuuuuunkY","YknnnnnnnnnnnnkY","YkkkkkkkkkkkkkkY","YYYYYYYYYYYYYYYY"
   ],
   tree: [
-    "................",
-    "......GGGG......",
-    ".....GggggG.....",
-    "....GggggggG....",
-    "...GggggggggG...",
-    "...GggggggggG...",
-    "...GggggggggG...",
-    "....GggggggG....",
-    ".....GggggG.....",
-    "......GggG......",
-    "......NNNN......",
-    "......NNNN......",
-    "......NNNN......",
-    "......NNNN......",
-    ".....NkNNkN.....",
-    "................"
+    "................","......GGGG......",".....GggggG.....","....GggggggG....",
+    "...GggggggggG...","...GggggggggG...","...GggggggggG...","....GggggggG....",
+    ".....GggggG.....","......GggG......","......NNNN......","......NNNN......",
+    "......NNNN......","......NNNN......",".....NkNNkN.....","................"
   ],
   fountain: [
-    "................",
-    "................",
-    "....cccccccc....",
-    "...cCCCCCCCCc...",
-    "..cCuuuuuuuuCc..",
-    "..cCuuuuuuuuCc..",
-    "..cCuuuuuuuuCc..",
-    "..cCuuuuuuuuCc..",
-    "...cCCCCCCCCc...",
-    "....cccccccc....",
-    "......CCCC......",
-    "......CCCC......",
-    ".....CCCCCC.....",
-    "....CCCCCCCC....",
-    "................",
-    "................"
+    "................","................","....cccccccc....","...cCCCCCCCCc...",
+    "..cCuuuuuuuuCc..","..cCuuuuuuuuCc..","..cCuuuuuuuuCc..","..cCuuuuuuuuCc..",
+    "...cCCCCCCCCc...","....cccccccc....","......CCCC......","......CCCC......",
+    ".....CCCCCC.....","....CCCCCCCC....","....CCCCCCCC....","................"
   ],
   statue: [
-    "................",
-    "......kkkk......",
-    ".....kcccck.....",
-    ".....kcwwck.....",
-    ".....kcccck.....",
-    "......kcck......",
-    ".....kkkkkk.....",
-    "....kcccccck....",
-    "....kcCCCCck....",
-    "....kcccccck....",
-    "....kcccccck....",
-    "...kcccccccck...",
-    "...kcccccccck...",
-    "..kkCCCCCCCCkk..",
-    "..kkkkkkkkkkkk..",
-    "................"
+    "................","......kkkk......",".....kcccck.....",".....kcwwck.....",
+    ".....kcccck.....","......kcck......",".....kkkkkk.....","....kcccccck....",
+    "....kcCCCCck....","....kcccccck....","....kcccccck....","...kcccccccck...",
+    "...kcccccccck...","..kkCCCCCCCCkk..","..kkkkkkkkkkkk..","................"
   ],
   portal: [
-    "uuuuuuuuuuuuuuuu",
-    "ukkkkkkkkkkkkkku",
-    "uk..kkkkkkkk..ku",
-    "uk..kkkkkkkk..ku",
-    "uk..kkkkkkkk..ku",
-    "uk..kkkkkkkk..ku",
-    "uk..kkkkkkkk..ku",
-    "uk..kkkkkkkk..ku",
-    "uk..kkkkkkkk..ku",
-    "uk..kkkkkkkk..ku",
-    "uk..kkkkkkkk..ku",
-    "uk............ku",
-    "ukkkkkkkkkkkkkku",
-    "uuuuuuuuuuuuuuuu",
-    "................",
-    "................"
+    "uuuuuuuuuuuuuuuu","ukkkkkkkkkkkkkku","uk..kkkkkkkk..ku","uk..kkkkkkkk..ku",
+    "uk..kkkkkkkk..ku","uk..kkkkkkkk..ku","uk..kkkkkkkk..ku","uk..kkkkkkkk..ku",
+    "uk..kkkkkkkk..ku","uk..kkkkkkkk..ku","uk..kkkkkkkk..ku","uk............ku",
+    "ukkkkkkkkkkkkkku","uuuuuuuuuuuuuuuu","................","................"
   ]
 };
 
 function buildSprite(rows){
   var h = rows.length, w = 0, y, x, row, ch, col;
   for (y = 0; y < h; y++) w = Math.max(w, rows[y].length);
+  // Drop fully-transparent rows from the bottom. drawSprite plants a prop by
+  // its visible base, so trailing padding here made tall props (lamp posts,
+  // market stalls, the well) hover above their shadows.
+  while (h > 1){
+    row = rows[h-1];
+    var blank = true;
+    for (x = 0; x < w; x++){ if (PALETTE[row[x] || "."]){ blank = false; break; } }
+    if (!blank) break;
+    h--;
+  }
   var cv = document.createElement("canvas");
   cv.width = w; cv.height = h;
   var g = cv.getContext("2d");
@@ -564,22 +430,135 @@ function buildSprite(rows){
   }
   return cv;
 }
-function flipSprite(cv){
-  var c = document.createElement("canvas");
-  c.width = cv.width; c.height = cv.height;
-  var g = c.getContext("2d");
-  g.translate(cv.width, 0); g.scale(-1, 1);
-  g.drawImage(cv, 0, 0);
-  return c;
-}
 var GFX = {};
 (function(){
   for (var name in SPRITES){
-    var c = buildSprite(SPRITES[name]);
-    GFX[name] = c;
-    GFX[name + "_f"] = flipSprite(c);
+    GFX[name] = buildSprite(SPRITES[name]);
   }
 })();
+
+// ---------------------------------------------------------------------------
+// SNES-style character sprite sheets (CC0 assets fetched from the internet).
+//
+//  sprites/character_base_16x16.png is a 64x64 sheet holding a 4 x 4 grid of
+//  16x16 frames.  Rows are the four facings and columns are the four walk
+//  frames (idle, step, idle, opposite step), verified pixel-by-pixel:
+//     row 0 = walk DOWN  (both eyes visible)
+//     row 1 = walk UP    (no face)
+//     row 2 = walk RIGHT (profile on the right)
+//     row 3 = walk LEFT  (profile on the left)
+// ---------------------------------------------------------------------------
+var spriteSheets = {};
+var spriteFrames = {};
+
+// Outfit colors applied to the otherwise-bare hero sheet. Pixels in the mid
+// (torso) band become a shirt; lower (leg) pixels become pants, while the
+// head, face and black outline are left untouched.
+var HERO_SHIRT = [74, 123, 214], HERO_PANTS = [110, 78, 52];
+
+// Returns a canvas copy of the hero sheet with a shirt and pants painted on.
+// Falls back to the original image if the canvas cannot be read (e.g. tainted).
+function recolorHeroSheet(img){
+  var cv = document.createElement("canvas");
+  cv.width = img.width; cv.height = img.height;
+  var g = cv.getContext("2d");
+  g.drawImage(img, 0, 0);
+  try {
+    var id = g.getImageData(0, 0, cv.width, cv.height);
+    var d = id.data, W = cv.width, fw = 16, fh = 16;
+    function isSkin(x, y){
+      var o = (y * W + x) * 4;
+      return d[o+3] !== 0 && d[o] === 246 && d[o+1] === 187 && d[o+2] === 148;
+    }
+    for (var fy = 0; fy + fh <= cv.height; fy += fh){
+      for (var fx = 0; fx + fw <= cv.width; fx += fw){
+        // the head is the skin blob connected to this frame's topmost skin pixel;
+        // it must never be recolored, whatever row the pose shifts it to
+        var head = new Uint8Array(fw * fh), stack = [], seedY = -1;
+        for (var ly = 0; ly < fh && seedY < 0; ly++)
+          for (var lx = 0; lx < fw; lx++)
+            if (isSkin(fx + lx, fy + ly)){ seedY = ly; break; }
+        if (seedY >= 0){
+          for (var sx = 0; sx < fw; sx++)
+            if (isSkin(fx + sx, fy + seedY)) stack.push(sx, seedY);
+          while (stack.length){
+            var cy = stack.pop(), cx = stack.pop();
+            if (cx < 0 || cx >= fw || cy < 0 || cy >= fh) continue;
+            if (head[cy * fw + cx] || !isSkin(fx + cx, fy + cy)) continue;
+            head[cy * fw + cx] = 1;
+            stack.push(cx + 1, cy, cx - 1, cy, cx, cy + 1, cx, cy - 1);
+          }
+        }
+        var dir = (fy / fh) % 4, fc = (fx / fw) % 4;
+        var legTop = (dir <= 1) ? 12 : ((fc === 0 || fc === 2) ? 10 : 12);
+        for (var ry = 0; ry < fh; ry++){
+          for (var rx = 0; rx < fw; rx++){
+            if (head[ry * fw + rx] || !isSkin(fx + rx, fy + ry)) continue;
+            var o = ((fy + ry) * W + (fx + rx)) * 4;
+            var col = (ry >= legTop) ? HERO_PANTS : HERO_SHIRT;
+            d[o] = col[0]; d[o+1] = col[1]; d[o+2] = col[2];
+          }
+        }
+      }
+    }
+    g.putImageData(id, 0, 0);
+    return cv;
+  } catch (e){
+    return img;
+  }
+}
+
+function loadSpriteSheets() {
+  var sheets = {
+    'hero': 'sprites/character_base_16x16.png'
+  };
+  for (var key in sheets) {
+    (function(k){
+      var img = new Image();
+      img.onload = function(){
+        spriteSheets[k + '_base'] = img;              // original, used by monsters
+        spriteSheets[k] = recolorHeroSheet(img);      // clothed, used by people
+      };
+      img.src = sheets[k];
+      spriteSheets[k] = img;
+    })(key);
+  }
+}
+
+function initSpriteFrames() {
+  var rows = { down: 0, up: 1, right: 2, left: 3 };
+  for (var dir in rows) {
+    for (var f = 0; f < 4; f++) {
+      spriteFrames['hero_' + dir + (f ? '_' + f : '')] =
+        { sheet: 'hero', sx: f * 16, sy: rows[dir] * 16, w: 16, h: 16 };
+      // Monsters use the original (unclothed) sheet.
+      spriteFrames['beast_' + dir + (f ? '_' + f : '')] =
+        { sheet: 'hero_base', sx: f * 16, sy: rows[dir] * 16, w: 16, h: 16 };
+    }
+    // Aliases kept for older call sites.
+    spriteFrames['hero_' + dir + '_f'] = spriteFrames['hero_' + dir];
+  }
+  // t.gfx aliases so enemy types keep working (tinted at draw time).
+  spriteFrames['goblin'] = spriteFrames['beast_down'];
+  spriteFrames['ghost']  = spriteFrames['beast_down'];
+  spriteFrames['demon']  = spriteFrames['beast_down'];
+}
+
+// Resolve a directional + animation frame key for a walking character.
+function heroFrameKey(dir, anim) {
+  if (dir !== 'up' && dir !== 'down' && dir !== 'left' && dir !== 'right') dir = 'down';
+  var f = anim & 3;
+  return 'hero_' + dir + (f ? '_' + f : '');
+}
+
+// Same, but selects the unclothed sheet used by monsters.
+function beastFrameKey(dir, anim) {
+  if (dir !== 'up' && dir !== 'down' && dir !== 'left' && dir !== 'right') dir = 'down';
+  var f = anim & 3;
+  return 'beast_' + dir + (f ? '_' + f : '');
+}
+
+initSpriteFrames();
 
 var TILE = 32, MAP_W = 40, MAP_H = 30;
 var WORLD_W = MAP_W * TILE, WORLD_H = MAP_H * TILE;
@@ -600,17 +579,318 @@ function fit(){
 window.addEventListener("resize", fit); fit();
 
 var ENEMY = {
-  grunt: { gfx:"goblin", hp:34, speed:64, dmg:9,  gold:5,  range:0,   tint:"#5ec060" },
-  ghost: { gfx:"ghost",  hp:22, speed:98, dmg:6,  gold:7,  range:0,   tint:"#a06cd0" },
-  demon: { gfx:"demon",  hp:70, speed:54, dmg:16, gold:12, range:330, tint:"#e04a3a" }
+  grunt: { gfx:"goblin", hp:34, speed:64, dmg:9,  gold:5,  range:0,   tint:"#5ec060", hue:112, alpha:1 },
+  ghost: { gfx:"ghost",  hp:22, speed:98, dmg:6,  gold:7,  range:0,   tint:"#a06cd0", hue:232, alpha:0.72 },
+  demon: { gfx:"demon",  hp:70, speed:54, dmg:16, gold:12, range:330, tint:"#e04a3a", hue:345, alpha:1 }
 };
 
 var grid, player, enemies, shots, foeShots, pickups, generators, bits;
-var cam, level, score, gold, kills, state, lastT, foodT, genInterval;
-var exitPos, exitActive, hasKey, MAX_ENEMIES = 34;
+// Bolts fired by the other adventurers. Every shooter keeps simulating its
+// own bullets and reports them along with its position (the `sh` field); the
+// server relays that list to everyone else below, so all players see the same
+// gunfire. Keyed by shooter id, then by that shooter's own bolt id.
+var remoteShots = {};
+// Bolt ids of our own shots, unique for the lifetime of one run.
+var shotSeq = 1;
+var cam, level, score, gold, kills, state;
+var exitPos, exitActive, hasKey;
 var keys = {}, mouse = { x:VIEW_W/2, y:VIEW_H/2, down:false };
 var typing = false;
 var lastHud = "";
+
+// The Gauntlet is simulated by the server, which pushes down the map grid,
+// the monsters, the generators, the pickups and the exit so that everyone
+// below plays the same run. `gone` remembers the entities an event already
+// removed, so a state snapshot built just before that event cannot bring
+// them back for a frame.
+var gone = {};
+// Monotonic snapshot counter, so an out-of-order state can never undo a
+// fresher one.
+var stateSeq = -1;
+var pendingDungeon = false, dungeonTimeout = null, dungeonTries = 0;
+
+// ---------------------------------------------------------------------------
+// Weapon upgrades bought in the village shop with gold looted below. `gold`
+// is a persistent wallet: it survives runs and is only spent here.
+//
+// Every entry may carry an `fx` object. The whole vocabulary is:
+//   additive per level : dmg count pierce bounce homing explode chain
+//                        lifesteal orbit backward maxHp move poison
+//                        burn crit
+//   multiplicative     : cd speed life size spread pitch goldFind
+//   flat (added last)  : cdFlat
+//   special            : look {shape,color,trail,s} and pattern <name>
+// Anything outside this list is rejected by the shop test (shop.test.js).
+// The server owns id / max / base / step (see upgradeDefs in go-server.go);
+// everything in `fx` is simulated by the client that owns the weapon.
+// ---------------------------------------------------------------------------
+var UPGRADES = [
+  // ---- Core stats, all stackable ----
+  { id:"dmg",    name:"Sharper Bolts",      desc:"+7 damage per bolt",                 max:8, base:40,   step:30,   fx:{ dmg:7 } },
+  { id:"rate",   name:"Rapid Fire",         desc:"fire 12% faster",                    max:6, base:60,   step:50,   fx:{ cdFlat:-0.025 } },
+  { id:"multi",  name:"Split Shot",         desc:"+1 bolt per shot, fanned",           max:4, base:140,  step:120,  fx:{ count:1 } },
+  { id:"hot",    name:"Hot Barrel",         desc:"+15% bolt speed",                    max:5, base:50,   step:40,   fx:{ speed:1.15 } },
+  { id:"long",   name:"Long Barrel",        desc:"+20% bolt range",                    max:5, base:45,   step:35,   fx:{ life:1.2 } },
+  { id:"cal",    name:"Big Caliber",        desc:"bolts 30% bigger, +2 damage",        max:4, base:70,   step:60,   fx:{ size:1.3, dmg:2 } },
+  { id:"rail",   name:"Railslug",           desc:"+1 enemy pierced per bolt",          max:4, base:220,  step:180,  fx:{ pierce:1 } },
+  { id:"bounce", name:"Bouncy Cap",         desc:"+1 wall ricochet",                   max:4, base:180,  step:150,  fx:{ bounce:1 } },
+  { id:"guide",  name:"Guided Souls",       desc:"bolts gently home in on monsters",   max:3, base:300,  step:250,  fx:{ homing:4 } },
+  { id:"lucky",  name:"Lucky Chamber",      desc:"+10% crit chance (double damage)",   max:5, base:120,  step:100,  fx:{ crit:0.1 } },
+  { id:"heart",  name:"Heart Container",    desc:"+25 max HP",                         max:4, base:150,  step:120,  fx:{ maxHp:25 } },
+  { id:"boots",  name:"Gauntlet Greaves",   desc:"+18 walk speed in the Gauntlet",     max:4, base:130,  step:110,  fx:{ move:18 } },
+  { id:"orb",    name:"Guardian Orb",       desc:"an orb circles you and batters monsters", max:4, base:260, step:200, fx:{ orbit:1 } },
+  { id:"paran",  name:"Paranoia",           desc:"also fires directly behind you",     max:2, base:200,  step:150,  fx:{ backward:1 } },
+  { id:"chain",  name:"Chain Lightning",    desc:"every hit jumps to a nearby monster", max:3, base:350, step:300,  fx:{ chain:1 } },
+  { id:"vamp",   name:"Vampiric Tips",      desc:"+1 HP per bolt that lands",          max:5, base:160,  step:120,  fx:{ lifesteal:1 } },
+  { id:"venom",  name:"Venom Tip",          desc:"bolts poison for 2 seconds",         max:3, base:200,  step:160,  fx:{ poison:1 } },
+  { id:"napalm", name:"Napalm Coating",     desc:"bolts set monsters alight",          max:3, base:200,  step:160,  fx:{ burn:1 } },
+  { id:"hollow", name:"Hollow Point",       desc:"bolts explode on impact",            max:3, base:260,  step:220,  fx:{ explode:28 } },
+  { id:"greed",  name:"Greed Sigil",        desc:"+50% gold from kills and treasure", max:3, base:300, step:250,  fx:{ goldFind:1.5 } },
+  { id:"choke",  name:"Choke Tube",         desc:"30% tighter spread",                 max:3, base:60,   step:50,   fx:{ spread:0.7 } },
+  { id:"stubby", name:"Stubby Barrels",     desc:"half the range for a much faster fire rate", max:2, base:90, step:70, fx:{ life:0.55, speed:0.85, cdFlat:-0.02 } },
+  { id:"bass",   name:"Bass Cannon",        desc:"deep low-pitched boom, +4 damage",   max:3, base:150,  step:120,  fx:{ pitch:0.6, dmg:4, size:1.15 } },
+  { id:"chip",   name:"Chipmunk Chamber",   desc:"squeaky high-pitched fire, +1 bolt", max:3, base:170,  step:130,  fx:{ pitch:1.7, count:1, dmg:-3 } },
+
+  // ---- Firing patterns. The rarest pattern you own rules every other shot,
+  //      cycling through the ones you bought. ----
+  { id:"shotgun", name:"Scattershot",   desc:"a wide shotgun blast of bolts",           max:1, base:120, step:0, fx:{ pattern:"shotgun" } },
+  { id:"spiral",  name:"Spiral Curse",  desc:"bolts spiral out of you in both arms",    max:1, base:180, step:0, fx:{ pattern:"spiral" } },
+  { id:"wall",    name:"Bullet Wall",   desc:"a full wall of bolts ahead of you",       max:1, base:160, step:0, fx:{ pattern:"wall" } },
+  { id:"laser",   name:"Beam Saber",    desc:"an instant laser pierces everything in a line", max:1, base:500, step:0, fx:{ pattern:"laser" } },
+  { id:"mine",    name:"Mine Dept.",    desc:"lobs slow mines that explode",            max:1, base:240, step:0, fx:{ pattern:"mine" } },
+  { id:"burst",   name:"Burst Mode",    desc:"three-round bursts",                      max:1, base:200, step:0, fx:{ pattern:"burst" } },
+  { id:"cross",   name:"Crossfire Idol",desc:"bolts in eight directions at once",        max:1, base:220, step:0, fx:{ pattern:"crossfire" } },
+  { id:"wave",    name:"Shockwave",     desc:"an expanding ring damages everything nearby", max:1, base:340, step:0, fx:{ pattern:"wave" } },
+  { id:"seek",    name:"Smart Swarm",   desc:"bolts fly themselves at the nearest monsters", max:1, base:420, step:0, fx:{ pattern:"seek" } },
+  { id:"boom",    name:"Boomerang Dept.",desc:"a giant returning boomerang",             max:1, base:280, step:0, fx:{ pattern:"boomerang" } },
+
+  // ---- Food ----
+  { id:"banana",  name:"Banana Bolt",         desc:"+1 damage (potassium)",        max:1, base:45,  step:0, fx:{ dmg:1 } },
+  { id:"pizza",   name:"Pizza Crust",         desc:"+1 damage, extra hot",         max:1, base:55,  step:0, fx:{ dmg:1, speed:1.05 } },
+  { id:"bagu",    name:"Tactical Baguette",   desc:"bolts 20% bigger, +1 damage",  max:1, base:60,  step:0, fx:{ size:1.2, dmg:1 } },
+  { id:"egg",     name:"Egg",                 desc:"fragile but nutritious: +6 max HP", max:1, base:50, step:0, fx:{ maxHp:6 } },
+  { id:"cheese",  name:"Cheese Cube",         desc:"+4% crit chance",              max:1, base:70,  step:0, fx:{ crit:0.04 } },
+  { id:"donut",   name:"Sprinkle Donut",      desc:"sugar rush: +8 walk speed",    max:1, base:65,  step:0, fx:{ move:8 } },
+  { id:"avo",     name:"Avocado",             desc:"+5 max HP",                    max:1, base:55,  step:0, fx:{ maxHp:5 } },
+  { id:"taco",    name:"Spicy Taco",          desc:"sets monsters alight a little", max:1, base:80, step:0, fx:{ burn:0.5 } },
+  { id:"hotdog",  name:"Hot Dog",             desc:"+2 damage",                    max:1, base:60,  step:0, fx:{ dmg:2 } },
+  { id:"candy",   name:"Sugar Candy",         desc:"+6 walk speed, faster cycling", max:1, base:60, step:0, fx:{ move:6, cdFlat:-0.004 } },
+  { id:"cookie",  name:"Choc Chip Cookie",    desc:"+2 damage",                    max:1, base:58,  step:0, fx:{ dmg:2 } },
+  { id:"corn",    name:"Corn Cob",            desc:"kernels pierce +1",            max:1, base:95,  step:0, fx:{ pierce:1 } },
+
+  // ---- Animals ----
+  { id:"frog",    name:"Concerning Frog",     desc:"bolts hop toward enemies",     max:1, base:110, step:0, fx:{ homing:1.5 } },
+  { id:"bee",     name:"Angry Bee",           desc:"+1 bolt, slightly weaker",     max:1, base:120, step:0, fx:{ count:1, dmg:-2 } },
+  { id:"rat",     name:"Sewer Rat",           desc:"squeezes through +1 monster",  max:1, base:100, step:0, fx:{ pierce:1 } },
+  { id:"crab",    name:"Emotional Crab",      desc:"+1 ricochet, sideways energy", max:1, base:105, step:0, fx:{ bounce:1 } },
+  { id:"fish",    name:"Wet Fish",            desc:"+10% bolt speed",              max:1, base:65,  step:0, fx:{ speed:1.1 } },
+  { id:"snail",   name:"Snail",               desc:"slow but brutal: +6 damage, -30% speed", max:1, base:90, step:0, fx:{ speed:0.7, dmg:6, size:1.2 } },
+  { id:"octo",    name:"Octopus",             desc:"eight arms: +1 bolt",          max:1, base:130, step:0, fx:{ count:1 } },
+  { id:"worm",    name:"Worm",                desc:"+20% bolt range",              max:1, base:70,  step:0, fx:{ life:1.2 } },
+  { id:"duck",    name:"Rubber Duck",         desc:"+1 bolt, slightly weaker",     max:1, base:115, step:0, fx:{ count:1, dmg:-1 } },
+  { id:"bat",     name:"Cave Bat",            desc:"bolts home in a little",       max:1, base:125, step:0, fx:{ homing:2 } },
+  { id:"spider",  name:"Spider",              desc:"pierces +1, +1 damage",        max:1, base:100, step:0, fx:{ pierce:1, dmg:1 } },
+  { id:"ghost",   name:"Shy Ghost",           desc:"smaller, faster, homes a bit", max:1, base:120, step:0, fx:{ homing:1, size:0.85, speed:1.1 } },
+
+  // ---- Weapons and tools ----
+  { id:"sword",   name:"Sword",               desc:"+4 damage",                    max:1, base:130, step:0, fx:{ dmg:4 } },
+  { id:"axe",     name:"Axe",                 desc:"+6 damage, -10% speed",        max:1, base:140, step:0, fx:{ dmg:6, speed:0.9 } },
+  { id:"dagger",  name:"Dagger",              desc:"+3 damage, small and quick",   max:1, base:100, step:0, fx:{ dmg:3, size:0.8, speed:1.1 } },
+  { id:"hammer",  name:"Sledgehammer",        desc:"+5 damage, huge and slow",     max:1, base:150, step:0, fx:{ dmg:5, size:1.4, speed:0.8 } },
+  { id:"wrench",  name:"Wrench",              desc:"+1 ricochet, +1 damage",       max:1, base:110, step:0, fx:{ bounce:1, dmg:1 } },
+  { id:"bomb",    name:"Barely Legal Bomb",   desc:"bolts explode a little",       max:1, base:180, step:0, fx:{ explode:18 } },
+  { id:"dart",    name:"Poison Dart",         desc:"bolts hunt aggressively",      max:1, base:200, step:0, fx:{ homing:2.5 } },
+  { id:"anchor",  name:"Anchor",              desc:"+8 damage, very slow, very big", max:1, base:190, step:0, fx:{ dmg:8, speed:0.7, size:1.3 } },
+  { id:"syringe", name:"Syringe",             desc:"bolts poison a little",        max:1, base:150, step:0, fx:{ poison:1 } },
+  { id:"pill",    name:"Mystery Pill",        desc:"+0.5 HP per hit",              max:1, base:130, step:0, fx:{ lifesteal:0.5 } },
+
+  // ---- Nature ----
+  { id:"mush",    name:"Suspicious Mushroom", desc:"bolts poison a bit",           max:1, base:145, step:0, fx:{ poison:0.75 } },
+  { id:"cactus",  name:"Cactus",              desc:"spines pierce +1",             max:1, base:105, step:0, fx:{ pierce:1 } },
+  { id:"tree",    name:"Christmas Tree",      desc:"big and sappy: +1.25 size, +2 damage", max:1, base:115, step:0, fx:{ size:1.25, dmg:2 } },
+  { id:"flower",  name:"Flower",              desc:"+5 max HP",                    max:1, base:75,  step:0, fx:{ maxHp:5 } },
+  { id:"clover",  name:"Lucky Clover",        desc:"+6% crit chance",              max:1, base:120, step:0, fx:{ crit:0.06 } },
+  { id:"seed",    name:"Seed",                desc:"+15% bolt range",              max:1, base:65,  step:0, fx:{ life:1.15 } },
+  { id:"pump",    name:"Pumpkin",             desc:"+3 damage, festive",           max:1, base:100, step:0, fx:{ dmg:3 } },
+  { id:"leaf",    name:"Autumn Leaf",         desc:"+8% bolt speed",               max:1, base:60,  step:0, fx:{ speed:1.08 } },
+  { id:"rock",    name:"Mossy Boulder",       desc:"+4 damage, heavy, +20% size",  max:1, base:125, step:0, fx:{ dmg:4, size:1.2, speed:0.92 } },
+
+  // ---- Space, fire and ice ----
+  { id:"rocket",  name:"Rocket",              desc:"+30% bolt speed",              max:1, base:130, step:0, fx:{ speed:1.3 } },
+  { id:"comet",   name:"Comet",               desc:"+20% speed, +2 damage, fire",   max:1, base:140, step:0, fx:{ speed:1.2, dmg:2 } },
+  { id:"planet",  name:"Small Planet",        desc:"huge, slow, +4 damage",        max:1, base:160, step:0, fx:{ size:1.5, speed:0.85, dmg:4 } },
+  { id:"moon",    name:"Moon",                desc:"+3 damage, 15% bigger",        max:1, base:95,  step:0, fx:{ dmg:3, size:1.1 } },
+  { id:"star",    name:"Star",                desc:"+8% crit chance",              max:1, base:150, step:0, fx:{ crit:0.08 } },
+  { id:"spark",   name:"Lightning Bolt",      desc:"+20% speed, +2 damage",        max:1, base:110, step:0, fx:{ speed:1.2, dmg:2 } },
+  { id:"fire",    name:"Fireball",            desc:"sets monsters alight",         max:1, base:190, step:0, fx:{ burn:1 } },
+  { id:"ice",     name:"Ice Cube",            desc:"+2 damage, homes a little",    max:1, base:105, step:0, fx:{ dmg:2, homing:1 } },
+  { id:"drop",    name:"Water Drop",          desc:"+1 damage, 10% bigger",        max:1, base:50,  step:0, fx:{ dmg:1, size:1.1 } },
+  { id:"rainbow", name:"Rainbow",             desc:"+1 bolt, trail of pure joy",   max:1, base:170, step:0, fx:{ count:1, dmg:-2 } },
+
+  // ---- Spooky and magical ----
+  { id:"eye",     name:"All-Seeing Eye",      desc:"bolts home in a little",       max:1, base:160, step:0, fx:{ homing:2 } },
+  { id:"brain",   name:"Brain",               desc:"hits jump to a nearby monster", max:1, base:320, step:0, fx:{ chain:1 } },
+  { id:"valentine", name:"Heart",             desc:"+1 HP per hit",                max:1, base:200, step:0, fx:{ lifesteal:1 } },
+  { id:"crystal", name:"Crystal",             desc:"+4 damage, sparkles",          max:1, base:180, step:0, fx:{ dmg:4 } },
+  { id:"crown",   name:"Crown",               desc:"+3 damage, +2% crit",          max:1, base:210, step:0, fx:{ dmg:3, crit:0.02 } },
+  { id:"wand",    name:"Wizard Wand",         desc:"+1 bolt, bolts home a bit",    max:1, base:250, step:0, fx:{ homing:1, count:1, dmg:-4 } },
+  { id:"orb2",    name:"Cursed Orb",          desc:"bolts seek hard",              max:1, base:300, step:0, fx:{ homing:2.5 } },
+  { id:"potion",  name:"Bubbling Potion",     desc:"poisons and burns a little",   max:1, base:230, step:0, fx:{ poison:0.5, burn:0.5 } },
+  { id:"alien",   name:"Alien",               desc:"phase-pierces +1 monster",     max:1, base:190, step:0, fx:{ pierce:1 } },
+  { id:"robot",   name:"Robot",               desc:"+3 damage, tiny rate boost",   max:1, base:200, step:0, fx:{ dmg:3, cdFlat:-0.004 } },
+  { id:"clown",   name:"Clown",               desc:"+1 bolt, chaos spread",        max:1, base:160, step:0, fx:{ spread:1.5, count:1 } },
+  { id:"devil",   name:"Tiny Devil",          desc:"+7 damage, -10 max HP",        max:1, base:260, step:0, fx:{ dmg:7, maxHp:-10 } },
+  { id:"dracula", name:"Vampire",             desc:"+1 HP per hit",                max:1, base:210, step:0, fx:{ lifesteal:1 } },
+
+  // ---- Junk drawer ----
+  { id:"brick",   name:"Brick",               desc:"+5 damage, -15% speed",        max:1, base:90,  step:0, fx:{ dmg:5, speed:0.85 } },
+  { id:"tp",      name:"Toilet Paper",        desc:"+30% size, +1 damage",         max:1, base:55,  step:0, fx:{ size:1.3, dmg:1 } },
+  { id:"spoon",   name:"Spoon",               desc:"+2 damage (there is no escape)", max:1, base:85, step:0, fx:{ dmg:2 } },
+  { id:"money",   name:"Money",               desc:"+1 damage, +2% crit",          max:1, base:75,  step:0, fx:{ dmg:1, crit:0.02 } },
+  { id:"dice",    name:"Loaded Dice",         desc:"+12% crit chance",             max:1, base:220, step:0, fx:{ crit:0.12 } },
+  { id:"card",    name:"Playing Card",        desc:"+1 bolt, papery",              max:1, base:120, step:0, fx:{ count:1, dmg:-1 } },
+  { id:"pawn",    name:"Chess Pawn",          desc:"+3 damage, patient",            max:1, base:80,  step:0, fx:{ dmg:3 } },
+  { id:"yoyo",    name:"Yoyo",                desc:"bolts wander home",             max:1, base:140, step:0, fx:{ homing:1.5 } },
+  { id:"disco",   name:"Disco Ball",          desc:"+1 bolt, party trail",         max:1, base:150, step:0, fx:{ count:1, dmg:-2 } },
+  { id:"balloon", name:"Balloon",             desc:"big, floaty, +3 damage",       max:1, base:105, step:0, fx:{ size:1.4, speed:0.85, dmg:3 } },
+  { id:"battery", name:"Battery",             desc:"+10% speed, +2 damage",        max:1, base:100, step:0, fx:{ speed:1.1, dmg:2 } },
+  { id:"watch",   name:"Pocket Watch",        desc:"a little faster cycling",      max:1, base:90,  step:0, fx:{ cdFlat:-0.008 } },
+  { id:"paint",   name:"Paint Splash",        desc:"wider, happier spread",        max:1, base:70,  step:0, fx:{ spread:1.3 } },
+  { id:"gift",    name:"Gift",                desc:"+2 damage, +3 max HP",         max:1, base:95,  step:0, fx:{ dmg:2, maxHp:3 } },
+  { id:"bell",    name:"Bell",                desc:"+2 damage, rings out",         max:1, base:70,  step:0, fx:{ dmg:2 } },
+  { id:"candle",  name:"Candle",              desc:"burns a little, +1 damage",    max:1, base:120, step:0, fx:{ burn:0.5, dmg:1 } },
+  { id:"warn",    name:"Warning Sign",        desc:"+30% size, +1 damage",         max:1, base:85,  step:0, fx:{ size:1.3, dmg:1 } },
+  { id:"nuke",    name:"Radioactive Waste",   desc:"bolts poison heavily",         max:1, base:280, step:0, fx:{ poison:1.5 } },
+  { id:"guitar",  name:"Electric Guitar",     desc:"+3 damage, shred trail",       max:1, base:150, step:0, fx:{ dmg:3 } },
+  { id:"horn",    name:"Trumpet",             desc:"+1 bolt, loud spread",         max:1, base:135, step:0, fx:{ count:1, spread:1.4, dmg:-2 } },
+  { id:"book",    name:"Heavy Book",          desc:"+4 damage, 15% bigger",        max:1, base:110, step:0, fx:{ dmg:4, size:1.15 } },
+  { id:"pencil",  name:"Pencil",              desc:"+10% speed, +1 damage",        max:1, base:60,  step:0, fx:{ speed:1.1, dmg:1 } },
+  { id:"magnet",  name:"Magnet",              desc:"bolts are drawn to monsters",  max:1, base:175, step:0, fx:{ homing:1 } },
+  { id:"bone",    name:"Bone",                desc:"pierces +1 monster",           max:1, base:100, step:0, fx:{ pierce:1 } },
+  { id:"kiss",    name:"Kiss",                desc:"+1 damage, bolts seek",        max:1, base:130, step:0, fx:{ homing:1, dmg:1 } },
+  { id:"bulb",    name:"Bright Idea",         desc:"+5% crit chance",              max:1, base:115, step:0, fx:{ crit:0.05 } },
+  { id:"puzzle",  name:"Puzzle Piece",        desc:"pierces +1 monster",           max:1, base:95,  step:0, fx:{ pierce:1 } },
+  { id:"umbrel",  name:"Umbrella",            desc:"+1 ricochet",                  max:1, base:100, step:0, fx:{ bounce:1 } },
+  { id:"kite",    name:"Kite",                desc:"+15% bolt speed",              max:1, base:75,  step:0, fx:{ speed:1.15 } },
+  { id:"coin",    name:"Lucky Coin",          desc:"+2 damage, tossed",            max:1, base:80,  step:0, fx:{ dmg:2 } },
+  { id:"ufo",     name:"UFO",                 desc:"homes a little, +1 damage",    max:1, base:170, step:0, fx:{ homing:1.5, dmg:1 } },
+  { id:"cat",     name:"Cat",                 desc:"homes a bit, +5 walk speed",   max:1, base:145, step:0, fx:{ homing:1, move:5 } },
+  { id:"cloud",   name:"Rain Cloud",          desc:"+1 bolt, dampened, wide",      max:1, base:125, step:0, fx:{ count:1, dmg:-3, spread:1.5 } },
+  { id:"sun",     name:"The Sun",             desc:"+5 damage, +20% size",         max:1, base:240, step:0, fx:{ dmg:5, size:1.2 } },
+  { id:"hole",    name:"Black Hole",          desc:"bolts explode, slow and heavy", max:1, base:330, step:0, fx:{ explode:25, dmg:2, speed:0.85 } }
+];
+
+// id -> definition, and the default (all-zero) wallet the shop renders from.
+var UPGRADE_BY_ID = {};
+for (var upi = 0; upi < UPGRADES.length; upi++) UPGRADE_BY_ID[UPGRADES[upi].id] = UPGRADES[upi];
+function defaultUpg(){
+  var d = {};
+  for (var i = 0; i < UPGRADES.length; i++) d[UPGRADES[i].id] = 0;
+  return d;
+}
+function upgradeById(id){ return UPGRADE_BY_ID[id] || null; }
+
+// Every distinct `look` is interned once so both the shooter and everyone
+// else can name it with a small integer (that integer is what travels with
+// the relayed bolts).
+var LOOK_LIST = [ { shape:"bolt", color:"#f6c744", trail:"spark", s:1 } ];
+// The base bolt is pre-registered so interning that exact look hands back 0
+// rather than duplicating it as index 1.
+var LOOK_IDS = { "bolt|#f6c744|spark|1": 0 };
+function internLook(l){
+  var shape = (l && l.shape) || "bolt", color = (l && l.color) || "#f6c744";
+  var trail = (l && l.trail) || "none", s = (l && l.s) || 1;
+  var key = shape + "|" + color + "|" + trail + "|" + s;
+  if (LOOK_IDS[key] === undefined){
+    LOOK_IDS[key] = LOOK_LIST.length;
+    LOOK_LIST.push({ shape: shape, color: color, trail: trail, s: s });
+  }
+  return LOOK_IDS[key];
+}
+function lookAt(idx){
+  if (typeof idx !== "number" || !(idx >= 0) || idx >= LOOK_LIST.length) idx = 0;
+  return LOOK_LIST[idx];
+}
+// Weapon rows show a little preview of the sprite you are buying: the emoji
+// itself for character looks, a symbol standing in for the drawn ones. Upgrade
+// rows never show one — upgrades tune the gun, they never repaint the bolt.
+var VECTOR_SHAPES = { bolt:"●", orb:"●", ring:"○", disc:"◉", star:"★", diamond:"◆",
+                      shard:"◈", tri:"▲", arrow:"➤", cross:"✚", crescent:"☾", glitch:"▦" };
+function lookGlyph(shape){ return VECTOR_SHAPES[shape] || shape; }
+
+// ---------------------------------------------------------------------------
+// Weapon types. These are a different beast from upgrades: an upgrade tweaks
+// the gun you already own, while a weapon type IS the gun. Every type brings
+// three things upgrades never touch — a sprite (its own look), a movement
+// pattern (the shape its bolts fly in) and a base damage value. You buy types
+// outright and switch between them; the upgrade stack then layers on top of
+// whichever one you are holding. The Gold Bolt is the free starter.
+// ---------------------------------------------------------------------------
+var WEAPONS = [
+  { id:"bolt",  name:"Gold Bolt",    desc:"the original — a steady fan of golden bolts",
+    base:26, cost:0,   pattern:"fan",
+    look:{ shape:"bolt", color:"#f6c744", trail:"spark", s:1 } },
+  { id:"scatter", name:"Scattergun", desc:"a wide spray of pellets, brutal up close",
+    base:14, cost:150, pattern:"shotgun",
+    look:{ shape:"tri", color:"#ffab91", trail:"smoke", s:1 } },
+  { id:"salvo", name:"Salvo",         desc:"three quick rounds each time you pull the trigger",
+    base:20, cost:200, pattern:"burst",
+    look:{ shape:"diamond", color:"#aed581", trail:"spark", s:0.9 } },
+  { id:"cyclone", name:"Cyclone",     desc:"a spinning arm of bolts that never stops turning",
+    base:22, cost:250, pattern:"spiral",
+    look:{ shape:"crescent", color:"#4dd0e1", trail:"rainbow", s:1 } },
+  { id:"barrage", name:"Barrage",     desc:"a wall of iron, slow but impossible to hide from",
+    base:10, cost:300, pattern:"wall",
+    look:{ shape:"disc", color:"#90a4ae", trail:"none", s:1 } },
+  { id:"crosscore", name:"Crossfire Core", desc:"fires in all eight directions at once",
+    base:16, cost:350, pattern:"crossfire",
+    look:{ shape:"cross", color:"#ff8a65", trail:"fire", s:1 } },
+  { id:"minelayer", name:"Mine Layer", desc:"lobs a spent charge that erupts on contact",
+    base:28, cost:400, pattern:"mine",
+    look:{ shape:"orb", color:"#ce93d8", trail:"smoke", s:1.2 } },
+  { id:"boomer", name:"Boomerang",    desc:"one heavy throw that always finds its way home",
+    base:40, cost:450, pattern:"boomerang",
+    look:{ shape:"crescent", color:"#a5d6a7", trail:"goo", s:1.1 } },
+  { id:"shockwave", name:"Shockwave", desc:"an expanding ring that scours everything it passes over",
+    base:30, cost:550, pattern:"wave",
+    look:{ shape:"ring", color:"#80deea", trail:"bubble", s:1.3 } },
+  { id:"seeker", name:"Seeker",       desc:"timid bolts, but they hunt whatever moves",
+    base:18, cost:650, pattern:"seek",
+    look:{ shape:"arrow", color:"#fff59d", trail:"glitch", s:0.9 } },
+  { id:"beam", name:"Beam Rod",       desc:"a hitscan lance that pierces everything in a line",
+    base:34, cost:800, pattern:"laser",
+    look:{ shape:"bolt", color:"#f48fb1", trail:"glitter", s:0.8 } }
+];
+
+// id -> weapon, and every weapon's sprite is interned once so it shares the
+// same integer space as the cosmetic looks.
+var WEAPON_BY_ID = {};
+for (var wj = 0; wj < WEAPONS.length; wj++){
+  var W = WEAPONS[wj];
+  WEAPON_BY_ID[W.id] = W;
+  W.lookIdx = internLook(W.look);
+}
+function weaponById(id){ return WEAPON_BY_ID[id] || WEAPON_BY_ID.bolt; }
+
+// What this account owns and which type it is holding. The server is the
+// authority: it echoes these back on login (welcome) and after every purchase
+// (wallet), so a fresh client starts on the free Gold Bolt until told otherwise.
+var wepOwned = { bolt: true };
+var wepCur = "bolt";
+
+// Fold the server's weapon state (owned list + current) into ours. The Gold
+// Bolt is always owned; an unknown or unowned current id falls back to it.
+function applyWeaponState(m){
+  if (m.wep){
+    wepOwned = { bolt: true };
+    for (var i = 0; i < m.wep.length; i++) wepOwned[m.wep[i]] = true;
+  }
+  if (m.wield && wepOwned[m.wield]) wepCur = m.wield;
+  else if (!wepOwned[wepCur]) wepCur = "bolt";
+}
+
+var upg = defaultUpg();
+var shopOpen = false;
 
 function solid(tx, ty){
   if (tx < 0 || ty < 0 || tx >= MAP_W || ty >= MAP_H) return true;
@@ -631,105 +911,158 @@ function moveEnt(e, dx, dy){
 function dist(a, b, c, d){ var u = a - c, v = b - d; return Math.sqrt(u*u + v*v); }
 function clamp(v, a, b){ return v < a ? a : (v > b ? b : v); }
 
-function clearArea(tx, ty, rad){
-  for (var y = ty - rad; y <= ty + rad; y++)
-    for (var x = tx - rad; x <= tx + rad; x++)
-      if (x > 0 && y > 0 && x < MAP_W - 1 && y < MAP_H - 1) grid[y][x] = 0;
-}
-function isOpen(tx, ty){
-  return tx > 0 && ty > 0 && tx < MAP_W - 1 && ty < MAP_H - 1 && grid[ty][tx] === 0;
-}
-function randomOpen(minDist){
-  for (var i = 0; i < 800; i++){
-    var tx = 2 + Math.floor(Math.random() * (MAP_W - 4));
-    var ty = 2 + Math.floor(Math.random() * (MAP_H - 4));
-    if (!isOpen(tx, ty)) continue;
-    var px = tx * TILE + TILE/2, py = ty * TILE + TILE/2;
-    if (minDist && dist(px, py, player.x, player.y) < minDist) continue;
-    return { x:px, y:py, tx:tx, ty:ty };
-  }
-  return { x:WORLD_W/2, y:WORLD_H/2, tx:MAP_W>>1, ty:MAP_H>>1 };
-}
-
-function genMap(){
-  grid = [];
+// The server hands over each floor's layout as a row-major string of wall
+// flags, so every player below collides with exactly the same walls.
+function applyGrid(rows){
+  if (typeof rows !== "string" || rows.length < MAP_W * MAP_H) return;
+  var g = [];
   for (var y = 0; y < MAP_H; y++){
     var row = [];
-    for (var x = 0; x < MAP_W; x++){
-      row.push((x === 0 || y === 0 || x === MAP_W - 1 || y === MAP_H - 1) ? 1 : 0);
-    }
-    grid.push(row);
+    for (var x = 0; x < MAP_W; x++) row.push(rows.charCodeAt(y * MAP_W + x) === 49 ? 1 : 0);
+    g.push(row);
   }
-  for (var yy = 3; yy < MAP_H - 2; yy += 3){
-    for (var xx = 3; xx < MAP_W - 2; xx += 3){
-      if (Math.random() < 0.4){
-        var size = Math.random() < 0.35 ? 2 : 1;
-        for (var dy = 0; dy < size; dy++)
-          for (var dx = 0; dx < size; dx++)
-            if (yy + dy < MAP_H - 1 && xx + dx < MAP_W - 1) grid[yy+dy][xx+dx] = 1;
-      }
-    }
-  }
-  clearArea(MAP_W>>1, MAP_H>>1, 3);
+  grid = g;
 }
 
-function pickType(){
-  var r = Math.random();
-  if (level <= 1) return r < 0.82 ? "grunt" : "ghost";
-  if (level <= 3) return r < 0.55 ? "grunt" : (r < 0.85 ? "ghost" : "demon");
-  return r < 0.4 ? "grunt" : (r < 0.72 ? "ghost" : "demon");
+function removeEntity(list, id){
+  for (var i = 0; i < list.length; i++) if (list[i].id === id){ list.splice(i, 1); return; }
 }
 
-function makeEnemy(x, y, type){
-  var t = ENEMY[type];
-  var mul = 1 + (level - 1) * 0.16;
-  return {
-    x:x, y:y, r:11, type:type, t:t,
-    hp:Math.round(t.hp * mul), maxHp:Math.round(t.hp * mul),
-    speed:t.speed * (1 + (level - 1) * 0.03),
-    dmg:t.dmg, touchCd:0, flash:0, shootCd:1 + Math.random()
-  };
-}
-
-function startLevel(n){
-  genMap();
-  player.x = WORLD_W/2; player.y = WORLD_H/2;
-  clearArea(MAP_W>>1, MAP_H>>1, 3);
-  player.hp = Math.min(player.maxHp, player.hp + 30);
-
-  enemies = []; shots = []; foeShots = []; pickups = []; bits = [];
+// Drops everything a run owns. Used when entering the Gauntlet and when the
+// server announces a new floor.
+function resetRun(){
+  enemies = []; shots = []; foeShots = []; pickups = []; generators = []; bits = [];
+  exitPos = { x:WORLD_W/2, y:WORLD_H/2 };
   exitActive = false; hasKey = false;
+  gone = {};
+  stateSeq = -1;
+  remoteShots = {}; shotSeq = 1;
+  // Weapon effects that belong to a single run.
+  burstQ = []; beams = []; blasts = [];
+  dots = { poison:{}, burn:{} };
+  patSeq = 0; spiralA = 0; orbitA = 0; orbitHitT = 0;
+}
 
-  var count = Math.min(6, 2 + n);
+// Fills the local entity lists from a server state snapshot. Existing
+// objects are reused by id so the smoothing towards the reported position
+// stays continuous between snapshots.
+function applyState(m){
+  if (typeof m.n === "number"){
+    if (m.n < stateSeq) return;
+    stateSeq = m.n;
+  }
+  var i, s, list, byId = {}, next = [];
+
+  list = m.e || [];
+  for (i = 0; i < enemies.length; i++) byId[enemies[i].id] = enemies[i];
+  next = [];
+  for (i = 0; i < list.length; i++){
+    s = list[i];
+    if (gone[s.i]) continue;
+    var e = byId[s.i];
+    if (e){
+      delete byId[s.i];
+      e.tx = s.x; e.ty = s.y; e.dir = s.d; e.hp = s.h; e.maxHp = s.hm;
+      if (s.f) e.flash = 0.14;
+    } else {
+      e = { id:s.i, type:s.tp, t:ENEMY[s.tp] || ENEMY.grunt,
+            x:s.x, y:s.y, tx:s.x, ty:s.y, r:11,
+            hp:s.h, maxHp:s.hm, dir:s.d || "down", anim:0, animTimer:0,
+            flash:s.f ? 0.14 : 0 };
+    }
+    next.push(e);
+  }
+  enemies = next;
+
+  list = m.g || [];
   generators = [];
-  for (var i = 0; i < count; i++){
-    var p = randomOpen(220);
-    generators.push({
-      x:p.x, y:p.y, r:16, type:pickType(),
-      hp:Math.round(70 + n * 18), maxHp:Math.round(70 + n * 18),
-      t:1.2 + Math.random() * 1.5, alive:true
-    });
+  for (i = 0; i < list.length; i++){
+    s = list[i];
+    if (gone[s.i]) continue;
+    generators.push({ id:s.i, x:s.x, y:s.y, r:16, type:s.tp,
+                      hp:s.h, maxHp:s.hm, alive:!!s.a });
   }
-  genInterval = Math.max(1.3, 2.7 - n * 0.12);
 
-  exitPos = randomOpen(340);
-  for (var j = 0; j < 2 + (n % 2); j++){
-    var tp = randomOpen(140);
-    pickups.push({ type:"treasure", x:tp.x, y:tp.y, r:12, bob:Math.random()*6 });
+  list = m.p || [];
+  byId = {};
+  for (i = 0; i < pickups.length; i++) byId[pickups[i].id] = pickups[i];
+  next = [];
+  for (i = 0; i < list.length; i++){
+    s = list[i];
+    if (gone[s.i]) continue;
+    var pk = byId[s.i];
+    if (pk){ delete byId[s.i]; pk.x = s.x; pk.y = s.y; pk.type = s.tp; }
+    else pk = { id:s.i, type:s.tp, x:s.x, y:s.y, r:12, bob:Math.random()*6 };
+    next.push(pk);
   }
-  foodT = 3;
+  pickups = next;
+
+  list = m.fs || [];
+  byId = {};
+  for (i = 0; i < foeShots.length; i++) byId[foeShots[i].id] = foeShots[i];
+  next = [];
+  for (i = 0; i < list.length; i++){
+    s = list[i];
+    var f = byId[s.i];
+    if (f){ delete byId[s.i]; f.tx = s.x; f.ty = s.y; }
+    else f = { id:s.i, x:s.x, y:s.y, tx:s.x, ty:s.y };
+    next.push(f);
+  }
+  foeShots = next;
+
+  if (m.ex){ exitPos = { x:m.ex.x, y:m.ex.y }; exitActive = !!m.ex.on; }
+  hasKey = !!m.key;
+  if (m.lv) level = m.lv;
+  if (state === "wait") state = "play";
+}
+
+// Stores one position update's worth of bolts for the player `id`. The list
+// replaces whatever that player had in flight, so a bolt the shooter no
+// longer reports (it hit a wall, a monster or its life ran out) disappears
+// from the other screens at once.
+function setRemoteShots(id, list){
+  var prev = remoteShots[id] ? remoteShots[id].s : {};
+  var next = {};
+  var n = 0;
+  if (list instanceof Array){
+    for (var i = 0; i < list.length && n < 128; i++){
+      var a = list[i];
+      if (!(a instanceof Array) || a.length < 3) continue;
+      var sid = a[0], x = +a[1], y = +a[2];
+      if (!isFinite(sid) || !isFinite(x) || !isFinite(y)) continue;
+      // Optional look index: it has to name a look this build knows about,
+      // anything else falls back to the plain gold bolt.
+      var lk = a.length > 3 ? Math.round(+a[3]) : 0;
+      if (!isFinite(lk) || lk < 0 || lk >= LOOK_LIST.length) lk = 0;
+      var cur = prev[sid];
+      if (cur){
+        var mvx = x - cur.tx, mvy = y - cur.ty;
+        if (mvx * mvx + mvy * mvy > 0.5) cur.ang = Math.atan2(mvy, mvx);
+        cur.tx = x; cur.ty = y;
+      } else cur = { x:x, y:y, tx:x, ty:y, ang:0 };
+      cur.look = lk;
+      next[sid] = cur;
+      n++;
+    }
+  }
+  remoteShots[id] = { t: performance.now() / 1000, s: next };
 }
 
 function startGame(){
-  player = { x:WORLD_W/2, y:WORLD_H/2, r:11, hp:100, maxHp:100, speed:158,
-             aim:0, face:"down", cd:0, invuln:0, speech:null };
-  level = 1; score = 0; gold = 0; kills = 0;
-  startLevel(1);
-  state = "play";
+  var pf = weaponProfile();
+  player = { x:WORLD_W/2, y:WORLD_H/2, r:11, hp:pf.maxHp, maxHp:pf.maxHp, speed:pf.move,
+             aim:0, face:"down", cd:0, invuln:0, speech:null, anim:0, animTimer:0 };
+  score = 0; kills = 0;
+  resetRun();
+  state = "wait"; // the first state snapshot from the server starts the run
   hide("over"); hide("paused");
 }
 function gameOver(){
   state = "over";
+  // Let the server know this hero is down, so the monsters move on to
+  // someone else.
+  send({ t: "dead" });
+  playSound("death", 0.7);
   document.getElementById("overtxt").innerHTML =
     "Level " + level + " &nbsp;·&nbsp; Gold " + gold + " &nbsp;·&nbsp; Kills " + kills;
   show("over");
@@ -744,16 +1077,412 @@ function spawnBits(x, y, color, n, spd){
   }
 }
 
+// ---------------------------------------------------------------------------
+// Weapon profile: everything you have bought, folded into the numbers the
+// Gauntlet actually simulates. It is rebuilt only when the wallet changes
+// (invalidateProfile), so firing just reads a cached object.
+// ---------------------------------------------------------------------------
+var FX_ADD = ["dmg","count","pierce","bounce","homing","explode","chain",
+              "lifesteal","orbit","backward","maxHp","move","poison",
+              "burn","crit"];
+var FX_MUL = ["cd","speed","life","size","spread","pitch","goldFind"];
+var wpCache = null;
+// Effects that live across frames: which pattern fires next, the spiral arm
+// angle, queued burst rounds, damage-over-time, the orbiting satellites and
+// the beams / blasts those draw.
+var patSeq = 0, spiralA = 0, burstQ = [];
+var dots = { poison:{}, burn:{} };
+var orbitA = 0, orbitHitT = 0;
+var beams = [], blasts = [];
+
+function invalidateProfile(){ wpCache = null; }
+
+function applyFx(pf, fx, lvl){
+  var i, k;
+  for (i = 0; i < FX_ADD.length; i++){
+    k = FX_ADD[i];
+    if (fx[k]) pf[k] += fx[k] * lvl;
+  }
+  for (i = 0; i < FX_MUL.length; i++){
+    k = FX_MUL[i];
+    if (fx[k]) pf[k] *= Math.pow(fx[k], lvl);
+  }
+  if (fx.cdFlat) pf.cdFlat += fx.cdFlat * lvl;
+  // No look branch: an upgrade may rotate the bolt's flight pattern, but the
+  // sprite it flies as belongs to the weapon type alone.
+  if (fx.pattern){ for (i = 0; i < lvl; i++) pf.patterns.push(fx.pattern); }
+}
+
+function weaponProfile(){
+  if (wpCache) return wpCache;
+  // The equipped weapon type seeds the profile: its base damage, its sprite
+  // and its movement pattern (the shape its bolts fly in) which fire() falls
+  // back to when no exotic pattern upgrade is bought. Everything the upgrade
+  // stack adds is applied on top of this — but never the sprite: upgrades
+  // tune the numbers, only the weapon type repaints the bolt.
+  var W = weaponById(wepCur);
+  var pf = {
+    dmg:W.base, cd:0.2, cdFlat:0, count:1, spread:0.14, speed:470, life:1.4, size:16,
+    pierce:0, bounce:0, homing:0, explode:0, chain:0, lifesteal:0, orbit:0,
+    backward:0, maxHp:100, move:158, poison:0, burn:0, crit:0,
+    goldFind:1, pitch:1, wep:W.id, pattern:W.pattern, looks:[W.lookIdx], patterns:[]
+  };
+  for (var id in upg){
+    var lvl = upg[id] | 0;
+    if (lvl <= 0) continue;
+    var u = upgradeById(id);
+    if (u && u.fx) applyFx(pf, u.fx, lvl);
+  }
+  // The server clamps a single hit to 150 damage, so stacking past that is
+  // pointless; everything else is clamped so that the screen stays renderable
+  // no matter how much of the catalogue you end up owning.
+  pf.cd      = Math.max(0.05, pf.cd + pf.cdFlat);
+  pf.cdFlat  = 0;
+  pf.dmg     = Math.min(149, Math.max(1, pf.dmg));
+  pf.count   = Math.min(20, Math.max(1, Math.round(pf.count)));
+  pf.speed   = Math.min(1900, Math.max(80, pf.speed));
+  pf.life    = Math.min(3.5, Math.max(0.2, pf.life));
+  pf.size    = Math.min(72, Math.max(6, pf.size));
+  pf.spread  = Math.min(1.6, Math.max(0, pf.spread));
+  pf.pierce  = Math.min(8, Math.max(0, Math.floor(pf.pierce)));
+  pf.bounce  = Math.min(6, Math.max(0, Math.floor(pf.bounce)));
+  pf.homing  = Math.min(14, Math.max(0, pf.homing));
+  pf.explode = Math.min(110, Math.max(0, pf.explode));
+  pf.chain   = Math.min(6, Math.max(0, Math.floor(pf.chain)));
+  pf.orbit   = Math.min(8, Math.max(0, Math.floor(pf.orbit)));
+  pf.backward= Math.min(4, Math.max(0, Math.floor(pf.backward)));
+  pf.maxHp   = Math.min(400, Math.max(50, pf.maxHp));
+  pf.move    = Math.min(340, Math.max(60, pf.move));
+  pf.poison  = Math.min(6, Math.max(0, pf.poison));
+  pf.burn    = Math.min(6, Math.max(0, pf.burn));
+  pf.crit    = Math.min(0.95, Math.max(0, pf.crit));
+  pf.goldFind= Math.min(8, Math.max(1, pf.goldFind));
+  pf.pitch   = Math.min(2.6, Math.max(0.35, pf.pitch));
+  wpCache = pf;
+  return pf;
+}
+
+function weaponCd(){ return weaponProfile().cd; }
+
+// The nearest monster to a point: used by homing bolts, the smart swarm
+// pattern, the trigger sprite and the guardian orbs.
+function nearestEnemy(x, y, maxR){
+  var best = null, bd = maxR * maxR;
+  for (var i = 0; i < enemies.length; i++){
+    var e = enemies[i], dx = e.x - x, dy = e.y - y, d = dx*dx + dy*dy;
+    if (d < bd){ bd = d; best = e; }
+  }
+  return best;
+}
+
+function angDiff(a, b){
+  var d = a - b;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  return d;
+}
+
+// One bolt. `opts` lets a firing pattern override speed / lifetime / radius
+// and arm special behaviour (mines, boomerangs) without duplicating the rest.
+// Every bolt gets a serial id — that id is what the server relays so other
+// players can follow it — and a look, cycled through the ones you own so the
+// whole collection shows up on screen.
+function spawnBolt(pf, ang, opts){
+  if (shots.length >= 400) return null; // hard cap, keep the frame rate up
+  opts = opts || {};
+  var crit = Math.random() < pf.crit;
+  var spd = opts.speed !== undefined ? opts.speed : pf.speed;
+  var base = opts.dmg !== undefined ? opts.dmg : pf.dmg;
+  var s = {
+    id: shotSeq++,
+    x: player.x + Math.cos(ang) * 14,
+    y: player.y + Math.sin(ang) * 14,
+    vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
+    dmg: Math.max(1, Math.round(base * (crit ? 2 : 1))),
+    life: opts.life !== undefined ? opts.life : pf.life,
+    r: opts.r !== undefined ? opts.r : Math.max(6, Math.min(26, pf.size * 0.42)),
+    pierce: opts.pierce !== undefined ? opts.pierce : pf.pierce,
+    bounce: opts.bounce !== undefined ? opts.bounce : pf.bounce,
+    homing: opts.homing !== undefined ? opts.homing : pf.homing,
+    explode: opts.explode !== undefined ? opts.explode : pf.explode,
+    chain: opts.chain !== undefined ? opts.chain : pf.chain,
+    drag: opts.drag !== undefined ? opts.drag : 1,
+    look: pf.looks[shotSeq % pf.looks.length],
+    crit: crit, spin: 0, wob: Math.random() * 6.28,
+    mine: !!opts.mine, hitIds: {}
+  };
+  if (opts.back){ s.back = true; s.life0 = s.life; }
+  shots.push(s);
+  return s;
+}
+
+// Hitscan: the beam marches to the first wall and burns everything on the way.
+function fireLaser(pf){
+  var range = Math.max(700, pf.speed * pf.life * 0.9);
+  var ca = Math.cos(player.aim), sa = Math.sin(player.aim);
+  var maxHits = 1 + pf.pierce;
+  var lk = pf.looks[shotSeq++ % pf.looks.length];
+  var seen = {}, hits = 0, ghits = 0;
+  var ex = player.x, ey = player.y;
+  for (var t = 10; t <= range; t += 9){
+    var px = player.x + ca * t, py = player.y + sa * t;
+    if (solid(Math.floor(px / TILE), Math.floor(py / TILE))) break;
+    ex = px; ey = py;
+    for (var i = 0; i < enemies.length && hits < maxHits; i++){
+      var e = enemies[i];
+      if (seen["e" + e.id]) continue;
+      if (dist(px, py, e.x, e.y) < e.r + pf.size * 0.5){
+        seen["e" + e.id] = 1; hits++;
+        damageEnemy(e, pf.dmg, pf);
+      }
+    }
+    for (var g = 0; g < generators.length && ghits < maxHits; g++){
+      var gn = generators[g];
+      if (!gn.alive || seen["g" + gn.id]) continue;
+      if (dist(px, py, gn.x, gn.y) < gn.r + pf.size * 0.5){
+        seen["g" + gn.id] = 1; ghits++;
+        send({ t:"hitg", i:gn.id, d:pf.dmg });
+        playSound("hit", 0.4);
+        spawnBits(px, py, "#a06cd0", 5, 80);
+      }
+    }
+  }
+  beams.push({ x1:player.x, y1:player.y, x2:ex, y2:ey, life:0.16, max:0.16,
+               color:lookAt(lk).color, w:Math.max(3, pf.size * 0.3) });
+}
+
+// An expanding ring: everything inside is hit once as the wave passes over it.
+function spawnWave(pf){
+  if (shots.length >= 400) return;
+  var lk = pf.looks[shotSeq % pf.looks.length];
+  shots.push({ id:shotSeq++, x:player.x, y:player.y, vx:0, vy:0,
+    wave:true, radius:10, wspeed:pf.speed * 0.7, wob:0, spin:0,
+    life:Math.min(1.4, pf.life), dmg:pf.dmg, r:16, look:lk, crit:false,
+    pierce:0, bounce:0, homing:0, explode:0, chain:0, drag:1,
+    mine:false, hitIds:{} });
+}
+
+// A monster takes a hit: tell the server (it owns the monster), then paint
+// everything your upgrades say should happen on contact.
+function damageEnemy(en, dmg, pf){
+  send({ t:"hit", i:en.id, d:dmg });
+  en.flash = 0.12;
+  playSound("hit", 0.4);
+  spawnBits(en.x, en.y, "#ffd36e", 4, 70);
+  if (pf.lifesteal) player.hp = Math.min(player.maxHp, player.hp + pf.lifesteal);
+  var nowS = performance.now() / 1000;
+  if (pf.poison){
+    var dp = dots.poison[en.id];
+    if (!dp || dp.until < nowS + 2.2) dots.poison[en.id] = { until:nowS + 2.2, dps:1.6 * pf.poison, tick:0.3 };
+  }
+  if (pf.burn){
+    var db = dots.burn[en.id];
+    if (!db || db.until < nowS + 1.6) dots.burn[en.id] = { until:nowS + 1.6, dps:2.2 * pf.burn, tick:0.3 };
+  }
+}
+
+// Chain lightning: the hit leaps to whatever is closest to the one it landed on.
+function chainFrom(en, dmg, pf){
+  var other = null, bd = 240 * 240;
+  for (var i = 0; i < enemies.length; i++){
+    var e = enemies[i];
+    if (e === en) continue;
+    var dx = e.x - en.x, dy = e.y - en.y, d = dx*dx + dy*dy;
+    if (d < bd){ bd = d; other = e; }
+  }
+  if (!other) return;
+  beams.push({ x1:en.x, y1:en.y, x2:other.x, y2:other.y, life:0.14, max:0.14,
+               color:"#9be7ff", w:2, zig:true });
+  damageEnemy(other, dmg, pf);
+}
+
+// One contact test at the bolt's current spot: the monsters it runs into and
+// the generators it strikes. Returns true when the bolt is spent (its last
+// pierce used up or its last monster hit). Mines opt out: they sit and wait
+// for their fuse.
+function boltContacts(s, pf){
+  if (s.mine) return false;
+  for (var e = 0; e < enemies.length; e++){
+    var en = enemies[e];
+    if (s.hitIds[en.id]) continue;
+    if (dist(s.x, s.y, en.x, en.y) >= en.r + s.r) continue;
+    s.hitIds[en.id] = 1;
+    damageEnemy(en, s.dmg, pf);
+    if (s.chain > 0){ chainFrom(en, Math.round(s.dmg * 0.6), pf); s.chain--; }
+    if (s.pierce > 0) s.pierce--;
+    else return true;
+  }
+  for (var gi = 0; gi < generators.length; gi++){
+    var g = generators[gi];
+    if (!g.alive || s.hitIds["g" + g.id]) continue;
+    if (dist(s.x, s.y, g.x, g.y) >= g.r + s.r) continue;
+    s.hitIds["g" + g.id] = 1;
+    send({ t:"hitg", i:g.id, d:s.dmg });
+    playSound("hit", 0.4);
+    spawnBits(s.x, s.y, "#a06cd0", 5, 80);
+    if (s.pierce > 0) s.pierce--;
+    else return true;
+  }
+  return false;
+}
+
+// Area damage on death (hollow points, mines, black holes...).
+function explodeAt(x, y, radius, dmg, color){
+  if (radius <= 0) return;
+  blasts.push({ x:x, y:y, r:radius, t:0, max:0.32, color:color || "#ffd36e" });
+  spawnBits(x, y, color || "#ffd36e", 14, 170);
+  playSound("hit", 0.5);
+  var pf = weaponProfile();
+  for (var i = 0; i < enemies.length; i++){
+    var e = enemies[i];
+    if (dist(x, y, e.x, e.y) < radius + e.r) damageEnemy(e, dmg, pf);
+  }
+  for (var g = 0; g < generators.length; g++){
+    var gn = generators[g];
+    if (gn.alive && dist(x, y, gn.x, gn.y) < radius + gn.r){
+      send({ t:"hitg", i:gn.id, d:dmg });
+      spawnBits(gn.x, gn.y, "#a06cd0", 4, 80);
+    }
+  }
+}
+
 function fire(){
-  var a = player.aim;
-  shots.push({ x:player.x + Math.cos(a)*14, y:player.y + Math.sin(a)*14,
-    vx:Math.cos(a)*470, vy:Math.sin(a)*470, dmg:26, life:1.4 });
+  var pf = weaponProfile();
+  playSound("shoot", 0.4, pf.pitch);
+  // With several firing patterns bought, each volley takes the next one in
+  // the collection: the arsenal is meant to be a parade of ideas. With none
+  // bought, the equipped weapon type flies its own signature pattern.
+  var pat = pf.patterns.length ? pf.patterns[(patSeq++) % pf.patterns.length] : pf.pattern;
+  var a = player.aim, i, n;
+  switch (pat){
+    case "shotgun":
+      n = 7 + pf.count;
+      for (i = 0; i < n; i++)
+        spawnBolt(pf, a + ((i + 0.5) / n - 0.5) * (0.7 + pf.spread * 1.4),
+                  { speed:pf.speed * 0.9, life:pf.life * 0.6, dmg:pf.dmg * 0.75 });
+      break;
+    case "spiral":
+      spiralA += 0.65;
+      spawnBolt(pf, spiralA, {});
+      spawnBolt(pf, spiralA + Math.PI, {});
+      if (pf.count > 2){
+        spawnBolt(pf, spiralA + Math.PI / 2, {});
+        spawnBolt(pf, spiralA - Math.PI / 2, {});
+      }
+      break;
+    case "wall":
+      n = 5 + pf.count * 2;
+      for (i = 0; i < n; i++)
+        spawnBolt(pf, a + ((i + 0.5) / n - 0.5) * Math.PI * 0.95,
+                  { speed:pf.speed * 0.85, dmg:pf.dmg * 0.6 });
+      break;
+    case "laser":
+      fireLaser(pf);
+      break;
+    case "burst":
+      if (!burstQ.length)
+        for (i = 0; i < 3; i++) burstQ.push({ t:i * 0.09, ang:a, pf:pf });
+      break;
+    case "mine":
+      spawnBolt(pf, a, { speed:pf.speed * 0.2, life:pf.life * 1.6, drag:0.9,
+                         explode:Math.max(pf.explode, 70), pierce:0, bounce:0, mine:true });
+      break;
+    case "crossfire":
+      for (i = 0; i < 8; i++) spawnBolt(pf, a + i * Math.PI / 4, {});
+      break;
+    case "wave":
+      spawnWave(pf);
+      break;
+    case "seek":
+      n = Math.max(1, pf.count);
+      var order = enemies.slice().sort(function(p, q){
+        return dist(player.x, player.y, p.x, p.y) - dist(player.x, player.y, q.x, q.y);
+      });
+      for (i = 0; i < n; i++){
+        var tgt = order.length ? order[i % order.length] : null;
+        var ta = tgt ? Math.atan2(tgt.y - player.y, tgt.x - player.x) : a;
+        spawnBolt(pf, ta, { homing:Math.max(pf.homing, 8) });
+      }
+      break;
+    case "boomerang":
+      spawnBolt(pf, a, { speed:pf.speed * 1.1, life:pf.life * 1.3,
+                         r:Math.max(14, pf.size * 0.7), pierce:0, bounce:0,
+                         dmg:pf.dmg * 1.4, back:true });
+      break;
+    default: // fan, the shape of the original weapon
+      n = pf.count;
+      for (i = 0; i < n; i++) spawnBolt(pf, a + (i - (n - 1) / 2) * pf.spread, {});
+  }
+  // Paranoia: whatever pattern fired, you are also covered behind you.
+  for (var b = 0; b < pf.backward; b++)
+    spawnBolt(pf, a + Math.PI + (b - (pf.backward - 1) / 2) * 0.22, {});
+}
+
+// Homing steering and the boomerang's trip home both happen before we move.
+function steerShot(s, dt, pf){
+  if (s.back){
+    if (s.life >= s.life0 * 0.5) return;
+    var pa = Math.atan2(player.y - s.y, player.x - s.x);
+    var pc = Math.atan2(s.vy, s.vx);
+    var pd = angDiff(pa, pc);
+    pc += Math.sign(pd) * Math.min(Math.abs(pd), 14 * dt);
+    var spd = Math.max(pf.speed * 0.9, Math.sqrt(s.vx*s.vx + s.vy*s.vy) * 0.997);
+    s.vx = Math.cos(pc) * spd; s.vy = Math.sin(pc) * spd;
+    if (dist(s.x, s.y, player.x, player.y) < 16) s.life = 0;
+    return;
+  }
+  if (s.homing <= 0) return;
+  var t = nearestEnemy(s.x, s.y, 560);
+  if (!t) return;
+  var want = Math.atan2(t.y - s.y, t.x - s.x);
+  var cur = Math.atan2(s.vy, s.vx);
+  var dd = angDiff(want, cur);
+  cur += Math.sign(dd) * Math.min(Math.abs(dd), s.homing * dt);
+  var sp = Math.sqrt(s.vx*s.vx + s.vy*s.vy);
+  s.vx = Math.cos(cur) * sp; s.vy = Math.sin(cur) * sp;
+}
+
+// Every shot trails something: the trail style comes from the look the bolt
+// was born with, so a banana leaves sparks and a swamp rock leaves nothing.
+function spawnTrail(s){
+  var L = lookAt(s.look);
+  if (L.trail === "none" || bits.length >= 520) return;
+  var rate = 0.72;
+  if (L.trail === "fire" || L.trail === "glitch") rate = 0.6;
+  if (Math.random() > rate) return;
+  var col = L.color, life = 0.3, size = 2 + Math.random() * 2;
+  var vx = -s.vx * 0.06 + (Math.random() - 0.5) * 30;
+  var vy = -s.vy * 0.06 + (Math.random() - 0.5) * 30;
+  switch (L.trail){
+    case "rainbow": col = "hsl(" + ((performance.now() * 0.35 + s.id * 47) % 360) + ",95%,62%)"; break;
+    case "glitter": col = ["#fff6b0", "#a0e8ff", "#ffb0e0", "#b0ffc8"][(s.id + (bits.length & 3)) & 3]; break;
+    case "smoke":   col = "#9aa0aa"; life = 0.6; size = 4 + Math.random() * 3; vy -= 26; break;
+    case "fire":    life = 0.22; size = 3 + Math.random() * 3; break;
+    case "bubble":  life = 0.5; size = 3; vy -= 30; break;
+    case "goo":     life = 0.45; size = 3; vy += 30; break;
+    case "glitch":  life = 0.18; size = 5; break;
+  }
+  bits.push({ x:s.x, y:s.y, vx:vx, vy:vy, life:life, max:life, color:col, size:size });
+}
+
+// Rounds our live bolts for the wire; the server hands the list to the other
+// players below with every position update. The fourth element is the look
+// (an index into the shared catalogue of looks), so the other screens can
+// draw the very same baguette.
+function shotReport(){
+  var out = [];
+  for (var i = 0; i < shots.length; i++){
+    var s = shots[i];
+    out.push([s.id, Math.round(s.x), Math.round(s.y), s.look | 0]);
+  }
+  return out;
 }
 
 function damagePlayer(d){
   if (player.invuln > 0) return;
   player.hp -= d;
   player.invuln = 0.55;
+  playSound("hurt", 0.55);
   spawnBits(player.x, player.y, "#e04a3a", 6, 90);
   if (player.hp <= 0){ player.hp = 0; gameOver(); }
 }
@@ -773,113 +1502,200 @@ function update(dt){
     moveEnt(player, (mx/len) * player.speed * dt, (my/len) * player.speed * dt);
     if (Math.abs(mx) > Math.abs(my)) player.face = mx < 0 ? "left" : "right";
     else player.face = my < 0 ? "up" : "down";
+    if (player.animTimer !== undefined) {
+      player.animTimer += dt;
+      if (player.animTimer > 0.14) { player.animTimer = 0; player.anim = (player.anim + 1) & 3; }
+    }
+  } else {
+    if (player.animTimer !== undefined) { player.anim = 0; player.animTimer = 0; }
   }
 
   var wmx = mouse.x + cam.x, wmy = mouse.y + cam.y;
   player.aim = Math.atan2(wmy - player.y, wmx - player.x);
+  if (IS_TOUCH){
+    // Phone: the right stick aims (and auto-fires). When it is idle, face the
+    // way the player walks instead of pointing at a mouse that does not exist.
+    if (MOBILE.aiming) player.aim = MOBILE.aimAngle;
+    else if (player.face === "left") player.aim = Math.PI;
+    else if (player.face === "right") player.aim = 0;
+    else if (player.face === "up") player.aim = -Math.PI / 2;
+    else if (player.face === "down") player.aim = Math.PI / 2;
+  }
+
+  var pf = weaponProfile();
+  var nowS = performance.now() / 1000;
 
   player.cd -= dt;
-  if (!typing && (mouse.down || keys[" "]) && player.cd <= 0){ fire(); player.cd = 0.2; }
+  var wantFire = !typing && !shopOpen && (mouse.down || keys[" "]);
+  if (wantFire && player.cd <= 0){ fire(); player.cd = weaponCd(); }
 
   player.invuln -= dt;
-  player.hp -= 1.6 * dt;
   if (player.hp <= 0){ player.hp = 0; gameOver(); return; }
+
+  // Bursts finish themselves: one queued round every 90ms.
+  for (var bi = burstQ.length - 1; bi >= 0; bi--){
+    var bq = burstQ[bi];
+    bq.t -= dt;
+    if (bq.t <= 0){ spawnBolt(bq.pf, bq.ang, {}); burstQ.splice(bi, 1); }
+  }
 
   for (var i = shots.length - 1; i >= 0; i--){
     var s = shots[i];
-    s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt;
-    var dead = s.life <= 0 || solid(Math.floor(s.x/TILE), Math.floor(s.y/TILE));
-    if (!dead){
-      for (var e = 0; e < enemies.length; e++){
-        var en = enemies[e];
-        if (dist(s.x, s.y, en.x, en.y) < en.r + 7){
-          en.hp -= s.dmg; en.flash = 0.12; dead = true;
-          spawnBits(s.x, s.y, "#ffd36e", 4, 70);
-          if (en.hp <= 0){ killEnemy(e); }
-          break;
+    var dead = false;
+    s.spin = (s.spin || 0) + dt * 9;
+
+    if (s.wave){
+      // The shockwave expands from where it was cast and hits everything it
+      // passes over exactly once.
+      s.radius += s.wspeed * dt;
+      s.life -= dt;
+      dead = s.life <= 0;
+      for (var we = 0; we < enemies.length; we++){
+        var wen = enemies[we];
+        if (s.hitIds[wen.id]) continue;
+        if (Math.abs(dist(s.x, s.y, wen.x, wen.y) - s.radius) < 16){
+          s.hitIds[wen.id] = 1;
+          damageEnemy(wen, s.dmg, pf);
+          if (s.chain > 0){ chainFrom(wen, Math.round(s.dmg * 0.6), pf); s.chain--; }
         }
       }
-    }
-    if (!dead){
-      for (var gi = 0; gi < generators.length; gi++){
-        var g = generators[gi];
-        if (g.alive && dist(s.x, s.y, g.x, g.y) < g.r + 6){
-          g.hp -= s.dmg; dead = true;
-          spawnBits(s.x, s.y, "#a06cd0", 5, 80);
-          if (g.hp <= 0) destroyGenerator(gi);
-          break;
+      for (var wg = 0; wg < generators.length; wg++){
+        var wgn = generators[wg];
+        if (!wgn.alive || s.hitIds["g" + wgn.id]) continue;
+        if (Math.abs(dist(s.x, s.y, wgn.x, wgn.y) - s.radius) < 16){
+          s.hitIds["g" + wgn.id] = 1;
+          send({ t:"hitg", i:wgn.id, d:s.dmg });
+          playSound("hit", 0.4);
+          spawnBits(wgn.x, wgn.y, "#a06cd0", 4, 70);
         }
       }
+    } else {
+      steerShot(s, dt, pf);
+      if (s.drag !== 1){ var dr = Math.pow(s.drag, dt * 60); s.vx *= dr; s.vy *= dr; }
+      s.life -= dt;
+      if (s.life <= 0) dead = true;
+      // Bolts are advanced in small hops: a heavily speed-stacked weapon can
+      // cover more than a wall tile in one frame, and without this it would
+      // sail straight through the masonry.
+      var hopSpd = Math.sqrt(s.vx * s.vx + s.vy * s.vy);
+      var hops = Math.max(1, Math.min(12, Math.ceil(hopSpd * dt / 9)));
+      var hdt = dt / hops;
+      for (var h = 0; h < hops && !dead; h++){
+        var hx = s.x + s.vx * hdt, hy = s.y + s.vy * hdt;
+        var wallX = solid(Math.floor(hx / TILE), Math.floor(s.y / TILE));
+        var wallY = solid(Math.floor(s.x / TILE), Math.floor(hy / TILE));
+        if (wallX && wallY){
+          dead = true; // wedged into a corner, out of options
+          break;
+        }
+        if (wallX || wallY){
+          if (s.bounce <= 0){ dead = true; break; }
+          if (wallX) s.vx = -s.vx;
+          if (wallY) s.vy = -s.vy;
+          s.bounce--;
+          spawnBits(s.x, s.y, "#9be7ff", 3, 60);
+          continue; // try again from where we bounced off
+        }
+        s.x = hx; s.y = hy;
+        // Bolts are simulated here, but the monsters belong to the server:
+        // report the hit and let the flash (and the kill event) confirm it.
+        if (boltContacts(s, pf)) dead = true;
+      }
+      if (!dead) spawnTrail(s);
     }
-    if (dead) shots.splice(i, 1);
+
+    if (dead){
+      if (s.explode > 0)
+        explodeAt(s.x, s.y, s.explode, Math.round(s.dmg * 0.8), lookAt(s.look).color);
+      shots.splice(i, 1);
+    }
   }
 
-  for (var j = enemies.length - 1; j >= 0; j--){
+  // Poison and fire keep ticking on the monsters they were applied to. The
+  // monsters are the server's, so every tick is just another hit report.
+  for (var dk = 0; dk < 2; dk++){
+    var dmap = dk ? dots.burn : dots.poison;
+    for (var did in dmap){
+      var dot = dmap[did];
+      dot.tick -= dt;
+      if (dot.until < nowS){ delete dmap[did]; continue; }
+      if (dot.tick <= 0){
+        dot.tick = 0.4;
+        var victim = null;
+        for (var di = 0; di < enemies.length; di++){
+          if (enemies[di].id === +did){ victim = enemies[di]; break; }
+        }
+        if (victim){
+          send({ t:"hit", i:victim.id, d:Math.max(1, Math.round(dot.dps * 0.4)) });
+          victim.flash = 0.12;
+          spawnBits(victim.x, victim.y, dk ? "#ff7043" : "#8bc34a", 3, 50);
+        } else delete dmap[did];
+      }
+    }
+  }
+
+  // Guardian orbs: satellites that batter whatever they sweep through.
+  if (pf.orbit > 0){
+    orbitA += dt * 2.4;
+    if (orbitHitT > 0) orbitHitT -= dt;
+    if (orbitHitT <= 0){
+      for (var o = 0; o < pf.orbit; o++){
+        var oa = orbitA + o * (2 * Math.PI / pf.orbit);
+        var ox = player.x + Math.cos(oa) * 46, oy = player.y + Math.sin(oa) * 40;
+        var ot = nearestEnemy(ox, oy, 20);
+        if (ot){ damageEnemy(ot, Math.max(1, Math.round(pf.dmg * 0.5)), pf); orbitHitT = 0.35; break; }
+      }
+    }
+  }
+
+  // Beams and blasts are pure visuals; they fade and go.
+  for (var bl = beams.length - 1; bl >= 0; bl--){
+    beams[bl].life -= dt;
+    if (beams[bl].life <= 0) beams.splice(bl, 1);
+  }
+  for (var ba = blasts.length - 1; ba >= 0; ba--){
+    blasts[ba].t += dt;
+    if (blasts[ba].t >= blasts[ba].max) blasts.splice(ba, 1);
+  }
+
+  // Smoothly walk the monsters towards the positions the server reported.
+  for (var j = 0; j < enemies.length; j++){
     var en2 = enemies[j];
-    en2.touchCd -= dt; en2.flash -= dt;
-    var ang = Math.atan2(player.y - en2.y, player.x - en2.x);
-    moveEnt(en2, Math.cos(ang) * en2.speed * dt, Math.sin(ang) * en2.speed * dt);
-    if (en2.t.range > 0){
-      en2.shootCd -= dt;
-      if (en2.shootCd <= 0 && dist(en2.x, en2.y, player.x, player.y) < en2.t.range){
-        en2.shootCd = 2.1 + Math.random();
-        foeShots.push({ x:en2.x, y:en2.y, vx:Math.cos(ang)*230, vy:Math.sin(ang)*230,
-          dmg:11, life:2.2 });
-      }
-    }
-    if (en2.touchCd <= 0 && dist(en2.x, en2.y, player.x, player.y) < en2.r + player.r){
-      damagePlayer(en2.dmg); en2.touchCd = 0.8;
+    en2.flash -= dt;
+    var k = Math.min(1, dt * 16);
+    var ddx = (en2.tx - en2.x) * k, ddy = (en2.ty - en2.y) * k;
+    en2.x += ddx; en2.y += ddy;
+    if (ddx*ddx + ddy*ddy > 0.35){
+      en2.animTimer += dt;
+      if (en2.animTimer > 0.18){ en2.animTimer = 0; en2.anim = (en2.anim + 1) & 3; }
+    } else if (en2.anim){ en2.anim = 0; en2.animTimer = 0; }
+  }
+
+  // Enemy bolts are drawn from server positions as well.
+  for (var fk2 = 0; fk2 < foeShots.length; fk2++){
+    var fo = foeShots[fk2];
+    var kk = Math.min(1, dt * 20);
+    fo.x += (fo.tx - fo.x) * kk;
+    fo.y += (fo.ty - fo.y) * kk;
+  }
+
+  // The bolts the other adventurers are firing arrive with their position
+  // updates: walk them towards the last report and drop the ones nobody has
+  // refreshed for a while — their owner died, left the Gauntlet or simply
+  // stopped shooting.
+  var nowSec = performance.now() / 1000;
+  for (var rid2 in remoteShots){
+    var grp = remoteShots[rid2];
+    if (nowSec - grp.t > 0.6){ delete remoteShots[rid2]; continue; }
+    for (var sid2 in grp.s){
+      var rsh = grp.s[sid2];
+      var rk2 = Math.min(1, dt * 20);
+      rsh.x += (rsh.tx - rsh.x) * rk2;
+      rsh.y += (rsh.ty - rsh.y) * rk2;
     }
   }
 
-  for (var k = foeShots.length - 1; k >= 0; k--){
-    var f = foeShots[k];
-    f.x += f.vx * dt; f.y += f.vy * dt; f.life -= dt;
-    var fdead = f.life <= 0 || solid(Math.floor(f.x/TILE), Math.floor(f.y/TILE));
-    if (!fdead && dist(f.x, f.y, player.x, player.y) < player.r + 7){
-      damagePlayer(f.dmg); fdead = true;
-    }
-    if (fdead) foeShots.splice(k, 1);
-  }
-
-  for (var m = generators.length - 1; m >= 0; m--){
-    var gen = generators[m];
-    if (!gen.alive) continue;
-    gen.t -= dt;
-    if (gen.t <= 0){
-      gen.t = genInterval;
-      if (enemies.length < MAX_ENEMIES){
-        enemies.push(makeEnemy(gen.x + (Math.random()*20-10), gen.y + (Math.random()*20-10), gen.type));
-        spawnBits(gen.x, gen.y, "#a06cd0", 6, 60);
-      }
-    }
-  }
-
-  for (var p = pickups.length - 1; p >= 0; p--){
-    var pk = pickups[p];
-    pk.bob += dt * 3;
-    if (dist(pk.x, pk.y, player.x, player.y) < 16 + player.r){
-      if (pk.type === "food"){
-        player.hp = Math.min(player.maxHp, player.hp + 20);
-        spawnBits(pk.x, pk.y, "#7ef08a", 6, 70);
-      } else if (pk.type === "treasure"){
-        gold += 10; score += 10;
-        spawnBits(pk.x, pk.y, "#f6c744", 8, 90);
-      } else if (pk.type === "key"){
-        hasKey = true; exitActive = true;
-        spawnBits(pk.x, pk.y, "#f6c744", 14, 110);
-      }
-      pickups.splice(p, 1);
-    }
-  }
-
-  foodT -= dt;
-  if (foodT <= 0){
-    foodT = 7;
-    var cnt = 0;
-    for (var q = 0; q < pickups.length; q++) if (pickups[q].type === "food") cnt++;
-    if (cnt < 4){ var fp = randomOpen(150); pickups.push({ type:"food", x:fp.x, y:fp.y, r:12, bob:0 }); }
-  }
+  for (var pk2 = 0; pk2 < pickups.length; pk2++) pickups[pk2].bob += dt * 3;
 
   for (var b = bits.length - 1; b >= 0; b--){
     var bit = bits[b];
@@ -888,44 +1704,201 @@ function update(dt){
     if (bit.life <= 0) bits.splice(b, 1);
   }
 
-  if (exitActive && dist(player.x, player.y, exitPos.x, exitPos.y) < 20){
-    level++; startLevel(level);
+  sendT -= dt;
+  if (sendT <= 0){
+    sendT = 0.067;
+    send({ t:"pos", x:player.x, y:player.y, dir:player.face, zone:"dungeon",
+           sh:shotReport() });
+  }
+  stepRemotes(dt, "dungeon", performance.now());
+
+  cam.x = Math.floor(clamp(player.x - VIEW_W/2, 0, WORLD_W - VIEW_W));
+  cam.y = Math.floor(clamp(player.y - VIEW_H/2, 0, WORLD_H - VIEW_H));
+}
+
+function drawSprite(key, x, y, size) {
+  var frame = spriteFrames[key];
+  if (frame && spriteSheets[frame.sheet]) {
+    var img = spriteSheets[frame.sheet];
+    var sx = frame.sx || 0, sy = frame.sy || 0, fw = frame.w || 16, fh = frame.h || 16;
+    var dx = Math.round(x - size/2), dy = Math.round(y - size/2);
+    // Height may differ from width for tall props (e.g. fountain spanning 2 tiles).
+    var dh = (fh !== fw) ? Math.round(size * fh / fw) : size;
+    if (fh !== fw) dy = Math.round(y - dh + size/2);
+    ctx.drawImage(img, sx, sy, fw, fh, dx, dy, size, dh);
     return;
   }
-
-  cam.x = clamp(player.x - VIEW_W/2, 0, WORLD_W - VIEW_W);
-  cam.y = clamp(player.y - VIEW_H/2, 0, WORLD_H - VIEW_H);
-}
-
-function killEnemy(idx){
-  var en = enemies[idx];
-  kills++; score += en.t.gold + 5; gold += 0;
-  spawnBits(en.x, en.y, en.t.tint, 12, 120);
-  enemies.splice(idx, 1);
-}
-function destroyGenerator(idx){
-  var g = generators[idx];
-  g.alive = false;
-  score += 40; gold += 5;
-  spawnBits(g.x, g.y, "#a06cd0", 22, 150);
-  spawnBits(g.x, g.y, "#f6c744", 10, 120);
-  var anyLeft = false;
-  for (var i = 0; i < generators.length; i++) if (generators[i].alive) anyLeft = true;
-  if (!anyLeft && !hasKey){
-    pickups.push({ type:"key", x:g.x, y:g.y, r:12, bob:0 });
+  var cv = GFX[key];
+  if (cv){
+    var dw = size, dh2 = Math.round(size * cv.height / cv.width);
+    var gx = Math.round(x - dw/2);
+    var gy = (cv.height !== cv.width) ? Math.round(y + size/2 - dh2) : Math.round(y - dh2/2);
+    ctx.drawImage(cv, gx, gy, dw, dh2);
   }
-}
-
-function drawSprite(key, x, y, size){
-  var img = GFX[key];
-  if (!img) return;
-  ctx.drawImage(img, Math.round(x - size/2), Math.round(y - size/2), size, size);
 }
 function shadow(x, y, w){
   ctx.fillStyle = "rgba(0,0,0,0.35)";
   ctx.beginPath();
   ctx.ellipse(x, y + 12, w, w * 0.4, 0, 0, Math.PI * 2);
   ctx.fill();
+}
+
+// One glowing bolt, in world coordinates. Our own shots and the ones the
+// other players are firing are drawn exactly the same way.
+// "#rrggbb" -> "rgba(r,g,b,a)", so a look's colour can be used for glows.
+function hexA(hex, a){
+  var h = String(hex || "#f6c744").replace("#", "");
+  if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  var n = parseInt(h, 16);
+  if (!isFinite(n)) return "rgba(246,199,68," + a + ")";
+  return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," +
+         (n & 255) + "," + a + ")";
+}
+
+// One projectile, in world coordinates. Our own shots and the ones the other
+// players are firing are drawn exactly the same way from the same interned
+// look, so a baguette is a baguette on every screen. `scale` comes from the
+// bolt's hit radius: bigger bullets really are bigger.
+function drawShot(x, y, lookIdx, angle, scale, crit){
+  var L = lookAt(lookIdx);
+  var px = x - cam.x, py = y - cam.y;
+  var sz = 16 * (L.s || 1) * (scale || 1);
+  var a = angle || 0;
+  ctx.fillStyle = hexA(L.color, 0.26);
+  ctx.beginPath(); ctx.arc(px, py, sz * 0.6, 0, Math.PI * 2); ctx.fill();
+  ctx.save();
+  ctx.translate(px, py);
+  var r = sz * 0.5, k;
+  switch (L.shape){
+    case "bolt":
+      drawSprite("bolt", 0, 0, sz);
+      ctx.rotate(a * 0.3);
+      break;
+    case "orb":
+      ctx.rotate(a * 0.5);
+      ctx.fillStyle = L.color;
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.75, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.beginPath(); ctx.arc(-r * 0.2, -r * 0.2, r * 0.26, 0, Math.PI * 2); ctx.fill();
+      break;
+    case "ring":
+      ctx.rotate(a * 1.2);
+      ctx.strokeStyle = L.color;
+      ctx.lineWidth = Math.max(2, r * 0.34);
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.8, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.4, 0, Math.PI * 2); ctx.stroke();
+      break;
+    case "disc":
+      ctx.fillStyle = L.color;
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.34, 0, Math.PI * 2); ctx.fill();
+      break;
+    case "star":
+      ctx.rotate(a * 1.8);
+      ctx.fillStyle = L.color;
+      ctx.beginPath();
+      for (k = 0; k < 10; k++){
+        var rr = (k & 1) ? r * 0.42 : r;
+        var aa = (k / 10) * Math.PI * 2;
+        var sx = Math.cos(aa) * rr, sy = Math.sin(aa) * rr;
+        if (k === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+      }
+      ctx.closePath(); ctx.fill();
+      break;
+    case "diamond":
+      ctx.rotate(a);
+      ctx.fillStyle = L.color;
+      ctx.beginPath();
+      ctx.moveTo(0, -r); ctx.lineTo(r * 0.62, 0); ctx.lineTo(0, r); ctx.lineTo(-r * 0.62, 0);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.4)";
+      ctx.beginPath(); ctx.moveTo(0, -r * 0.6); ctx.lineTo(r * 0.3, 0); ctx.lineTo(0, 0); ctx.lineTo(-r * 0.3, 0);
+      ctx.closePath(); ctx.fill();
+      break;
+    case "shard":
+      ctx.rotate(a);
+      ctx.fillStyle = L.color;
+      ctx.beginPath();
+      ctx.moveTo(r, 0); ctx.lineTo(-r * 0.2, r * 0.34); ctx.lineTo(-r, 0); ctx.lineTo(-r * 0.2, -r * 0.34);
+      ctx.closePath(); ctx.fill();
+      break;
+    case "tri":
+      ctx.rotate(a);
+      ctx.fillStyle = L.color;
+      ctx.beginPath();
+      ctx.moveTo(r, 0); ctx.lineTo(-r * 0.7, r * 0.7); ctx.lineTo(-r * 0.7, -r * 0.7);
+      ctx.closePath(); ctx.fill();
+      ctx.rotate(a * 2);
+      ctx.fillStyle = hexA(L.color, 0.25);
+      ctx.beginPath();
+      ctx.moveTo(r * 0.5, 0); ctx.lineTo(-r * 0.4, r * 0.4); ctx.lineTo(-r * 0.4, -r * 0.4);
+      ctx.closePath(); ctx.fill();
+      break;
+    case "arrow":
+      ctx.rotate(a);
+      ctx.strokeStyle = L.color;
+      ctx.lineWidth = Math.max(2, r * 0.4);
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.5, -r * 0.7); ctx.lineTo(r * 0.6, 0); ctx.lineTo(-r * 0.5, r * 0.7);
+      ctx.stroke();
+      ctx.globalAlpha = 0.4;
+      ctx.lineWidth = Math.max(1, r * 0.2);
+      ctx.beginPath(); ctx.moveTo(-r * 0.8, 0); ctx.lineTo(r * 0.2, 0); ctx.stroke();
+      ctx.globalAlpha = 1;
+      break;
+    case "cross":
+      ctx.rotate(a);
+      ctx.fillStyle = L.color;
+      ctx.fillRect(-r, -r * 0.3, r * 2, r * 0.6);
+      ctx.fillRect(-r * 0.3, -r, r * 0.6, r * 2);
+      break;
+    case "crescent":
+      ctx.rotate(a);
+      ctx.fillStyle = L.color;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, Math.PI * 0.35, Math.PI * 1.65);
+      ctx.arc(r * 0.45, 0, r * 0.85, Math.PI * 1.6, Math.PI * 0.4, true);
+      ctx.closePath(); ctx.fill();
+      break;
+    case "glitch":
+      var gk = (performance.now() * 0.03 + (x * 3 + y * 5)) % 1;
+      ctx.save();
+      ctx.translate(-r * (gk * 0.8 - 0.4), r * ((gk * 0.6 - 0.3)));
+      ctx.fillStyle = L.color;
+      ctx.fillRect(-r * 0.9, -r * 0.6, r * 1.4, r * 0.8);
+      ctx.restore();
+      ctx.save();
+      ctx.translate(r * (gk * 0.9 - 0.45), -r * ((gk * 0.7 - 0.35)));
+      ctx.fillStyle = "rgba(255,255,255,0.75)";
+      ctx.fillRect(-r * 0.7, -r * 0.6, r * 1.2, r * 0.8);
+      ctx.restore();
+      ctx.rotate(a * 0.6);
+      ctx.fillStyle = "rgba(0,0,0,0.55)";
+      ctx.fillRect(-r * 0.5, -r * 0.2, r * 1.0, r * 0.4);
+      break;
+    default:
+      // Anything else is a character: an emoji, a rune, a symbol. It stays
+      // upright so it remains readable while it flies.
+      ctx.font = Math.max(12, Math.round(sz * 1.15)) + "px serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = L.color;
+      var tnow = performance.now() * 0.001 + (x * 7 + y * 13);
+      if (L.shape === "👻") { ctx.globalAlpha = 0.75 + Math.sin(tnow * 3) * 0.25; }
+      else if (L.shape === "💣") { ctx.scale(1, 0.9 + Math.sin(tnow * 4) * 0.15); }
+      else if (L.shape === "⚡") { ctx.rotate(a * 2 + Math.sin(tnow * 12) * 0.3); }
+      ctx.fillText(L.shape, 0, 0);
+      ctx.globalAlpha = 1;
+      break;
+  }
+  ctx.restore();
+  if (crit){
+    ctx.strokeStyle = "rgba(255,255,255,0.85)";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(px, py, sz * 0.66, 0, Math.PI * 2); ctx.stroke();
+  }
 }
 
 function wrapText(text, maxW, font){
@@ -1014,11 +1987,73 @@ function render(){
     ctx.fillRect(gx - 18, gy - 26, 36 * frac, 5);
   }
 
+  var rpf = weaponProfile();
   for (var s = 0; s < shots.length; s++){
     var sh = shots[s];
-    ctx.fillStyle = "rgba(246,199,68,0.3)";
-    ctx.beginPath(); ctx.arc(sh.x - cam.x, sh.y - cam.y, 9, 0, Math.PI*2); ctx.fill();
-    drawSprite("bolt", sh.x - cam.x, sh.y - cam.y, 16);
+    if (sh.wave){
+      // The shockwave is a ring, drawn from the look it was cast with.
+      var wl = lookAt(sh.look);
+      ctx.strokeStyle = hexA(wl.color, 0.28);
+      ctx.lineWidth = 10;
+      ctx.beginPath(); ctx.arc(sh.x - cam.x, sh.y - cam.y, sh.radius, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = hexA(wl.color, 0.85);
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(sh.x - cam.x, sh.y - cam.y, sh.radius, 0, Math.PI * 2); ctx.stroke();
+      continue;
+    }
+    drawShot(sh.x, sh.y, sh.look, Math.atan2(sh.vy, sh.vx), Math.max(0.6, sh.r / 6.72), sh.crit);
+  }
+  // Bolts the other players are firing, relayed by the server.
+  for (var rsGrpId in remoteShots){
+    var rsGroup = remoteShots[rsGrpId].s;
+    for (var rsKey in rsGroup){
+      var rem = rsGroup[rsKey];
+      drawShot(rem.x, rem.y, rem.look, rem.ang, 1, rem.crit);
+    }
+  }
+  // Guardian orbs, the beams and the blasts: everything the weapon profile
+  // adds on top of plain bolts.
+  if (rpf.orbit > 0){
+    for (var ob = 0; ob < rpf.orbit; ob++){
+      var oaa = orbitA + ob * (2 * Math.PI / rpf.orbit);
+      drawShot(player.x + Math.cos(oaa) * 46, player.y + Math.sin(oaa) * 40,
+               rpf.looks[ob % rpf.looks.length], oaa, 0.85, false);
+    }
+  }
+  for (var bm = 0; bm < beams.length; bm++){
+    var beam = beams[bm];
+    var bf = Math.max(0, beam.life / beam.max);
+    ctx.globalAlpha = bf;
+    ctx.strokeStyle = hexA(beam.color, 0.5);
+    ctx.lineWidth = beam.w * 2.2;
+    ctx.beginPath();
+    ctx.moveTo(beam.x1 - cam.x, beam.y1 - cam.y);
+    if (beam.zig){
+      var steps = 5;
+      for (var zi = 1; zi < steps; zi++){
+        var zf = zi / steps;
+        ctx.lineTo(
+          beam.x1 + (beam.x2 - beam.x1) * zf + (Math.random() - 0.5) * 14,
+          beam.y1 + (beam.y2 - beam.y1) * zf + (Math.random() - 0.5) * 14);
+      }
+    }
+    ctx.lineTo(beam.x2 - cam.x, beam.y2 - cam.y);
+    ctx.stroke();
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = beam.w * 0.6;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  for (var bs = 0; bs < blasts.length; bs++){
+    var bl2 = blasts[bs];
+    var bf2 = bl2.t / bl2.max;
+    ctx.globalAlpha = Math.max(0, 1 - bf2);
+    ctx.strokeStyle = bl2.color;
+    ctx.lineWidth = 6 * (1 - bf2) + 2;
+    ctx.beginPath();
+    ctx.arc(bl2.x - cam.x, bl2.y - cam.y, bl2.r * (0.35 + bf2 * 0.65), 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
   }
   for (var fs = 0; fs < foeShots.length; fs++){
     var fo = foeShots[fs];
@@ -1030,6 +2065,10 @@ function render(){
 
   var order = [];
   for (var e2 = 0; e2 < enemies.length; e2++) order.push({ y:enemies[e2].y, kind:"e", ref:enemies[e2] });
+  for (var rid in remotes){
+    var rr = remotes[rid];
+    if (rr.zone === "dungeon") order.push({ y:rr.y, kind:"r", ref:rr });
+  }
   order.push({ y:player.y, kind:"p", ref:player });
   order.sort(function(a, b){ return a.y - b.y; });
 
@@ -1037,16 +2076,19 @@ function render(){
     var it = order[o], r = it.ref;
     shadow(r.x - cam.x, r.y - cam.y, 11);
     if (it.kind === "p"){
-      var pk2 = "hero_down";
-      if (r.face === "up") pk2 = "hero_up";
-      else if (r.face === "left") pk2 = "hero_side_f";
-      else if (r.face === "right") pk2 = "hero_side";
       ctx.globalAlpha = r.invuln > 0 && Math.floor(performance.now()/70) % 2 ? 0.4 : 1;
-      drawSprite(pk2, r.x - cam.x, r.y - cam.y, TILE);
+      drawSprite(heroFrameKey(r.face, r.anim), r.x - cam.x, r.y - cam.y, TILE);
       ctx.globalAlpha = 1;
+    } else if (it.kind === "r"){
+      ctx.filter = "hue-rotate(" + r.hue + "deg)";
+      drawSprite(heroFrameKey(r.dir, r.anim), r.x - cam.x, r.y - cam.y, TILE);
+      ctx.filter = "none";
+      drawNameTag(r.name, r.x - cam.x, r.y - cam.y - 20, false);
     } else {
-      ctx.globalAlpha = r.flash > 0 ? 0.5 : 1;
-      drawSprite(r.t.gfx, r.x - cam.x, r.y - cam.y, TILE);
+      ctx.globalAlpha = r.flash > 0 ? 0.5 : (r.t.alpha || 1);
+      ctx.filter = "hue-rotate(" + (r.t.hue || 0) + "deg)";
+      drawSprite(beastFrameKey(r.dir, r.anim), r.x - cam.x, r.y - cam.y, TILE);
+      ctx.filter = "none";
       ctx.globalAlpha = 1;
     }
   }
@@ -1067,8 +2109,37 @@ function render(){
       drawSpeech(player.x - cam.x, player.y - cam.y - 26, player.speech.text, frac);
     } else player.speech = null;
   }
+  var mnow = performance.now();
+  for (var sid in remotes){
+    var sr = remotes[sid];
+    if (sr.zone !== "dungeon" || !sr.speech) continue;
+    var sleft = sr.speech.until - mnow;
+    if (sleft > 0){
+      var sfrac = sleft < 600 ? sleft / 600 : 1;
+      drawSpeech(sr.x - cam.x, sr.y - cam.y - 26, sr.speech.text, sfrac);
+    } else sr.speech = null;
+  }
+
+  drawCrosshair();
 
   updateHud();
+}
+
+function drawCrosshair(){
+  var x = Math.round(mouse.x) + 0.5, y = Math.round(mouse.y) + 0.5;
+  var gap = 4, len = 8;
+  ctx.save();
+  ctx.strokeStyle = "#ff2a2a";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x - gap - len, y); ctx.lineTo(x - gap, y);
+  ctx.moveTo(x + gap, y);       ctx.lineTo(x + gap + len, y);
+  ctx.moveTo(x, y - gap - len); ctx.lineTo(x, y - gap);
+  ctx.moveTo(x, y + gap);       ctx.lineTo(x, y + gap + len);
+  ctx.stroke();
+  ctx.fillStyle = "#ff2a2a";
+  ctx.fillRect(x - 1, y - 1, 2, 2);
+  ctx.restore();
 }
 
 function updateHud(){
@@ -1086,7 +2157,8 @@ function updateHud(){
   else obj = "Reach the glowing exit →";
   document.getElementById("objective").textContent = obj;
   document.getElementById("stats").textContent =
-    "LVL " + level + "   GOLD " + gold + "   KILLS " + kills;
+    "LVL " + level + "   GOLD " + gold + "   KILLS " + kills +
+    "   WPN " + weaponById(wepCur).name;
 }
 
 function show(id){ document.getElementById(id).classList.remove("hidden"); }
@@ -1111,10 +2183,201 @@ function submitChat(){
     if (scene === "hub"){
       send({ t: "chat", text: text });
     } else if (scene === "dungeon" && state === "play"){
+      send({ t: "chat", text: text });
       player.speech = { text:text, until: performance.now() + 4000 };
     }
   }
   closeChat();
+}
+
+function nearShop(){
+  return !!shopPos && !shopOpen &&
+    dist(hubPlayer.x, hubPlayer.y, shopPos.x, shopPos.y) < 44;
+}
+
+function openShop(){
+  if (shopOpen) return;
+  playSound("shop", 0.5);
+  shopOpen = true;
+  keys = {};
+  show("shop");
+  var f = document.getElementById("shopfilter");
+  if (f) f.value = ""; // always open on the full catalogue
+  document.getElementById("hubhint").classList.remove("on");
+  refreshShop();
+}
+
+function closeShop(){
+  if (!shopOpen) return;
+  shopOpen = false;
+  hide("shop");
+  if (scene === "hub") document.getElementById("hubhint").classList.add("on");
+}
+
+function upgradeCost(u){ return u.base + u.step * (upg[u.id] || 0); }
+
+// How each weapon's signature movement pattern is billed in the shop.
+var PATTERN_NAMES = {
+  fan:"fan spread", shotgun:"wide scatter", spiral:"corkscrew spin", wall:"wall of iron",
+  laser:"hitscan beam", burst:"3-round burst", mine:"sticky mine", crossfire:"all 8 directions",
+  wave:"expanding ring", seek:"homing seek", boomerang:"throw and return"
+};
+
+// The shop is one panel with two tabs, browser-style: weapon types and the
+// upgrade catalogue take turns in the same space, each keeping its own tally
+// in the tab label. Both lists are still rendered on every refresh so a
+// purchase redraws whichever tab you happen to be looking at.
+var shopTab = "weapons";
+
+function applyShopTab(){
+  var w = document.getElementById("shopweapons");
+  var u = document.getElementById("shopitems");
+  if (w) w.classList.toggle("hidden", shopTab !== "weapons");
+  if (u) u.classList.toggle("hidden", shopTab !== "upgrades");
+  var tw = document.getElementById("tab-weapons");
+  var tu = document.getElementById("tab-upgrades");
+  if (tw) tw.classList.toggle("on", shopTab === "weapons");
+  if (tu) tu.classList.toggle("on", shopTab === "upgrades");
+}
+
+function setShopTab(id){
+  if (id !== "weapons" && id !== "upgrades") return;
+  if (shopTab === id) return;
+  shopTab = id;
+  playSound("pickup", 0.22, 1.7);
+  applyShopTab();
+}
+
+// The weapon-type tab: each row shows the type's own sprite, its base damage
+// and the movement pattern it flies in, and doubles as the equip control.
+function refreshWeapons(){
+  var cont = document.getElementById("shopweapons");
+  if (!cont) return;
+  var filterEl = document.getElementById("shopfilter");
+  var filter = (filterEl ? filterEl.value : "").toLowerCase().trim();
+  var owned = 0, cnt = document.getElementById("wepcount");
+  cont.innerHTML = "";
+  for (var i = 0; i < WEAPONS.length; i++){
+    (function(W){
+      if (wepOwned[W.id]) owned++;
+      if (filter && (W.name + " " + W.desc + " " +
+          (PATTERN_NAMES[W.pattern] || W.pattern)).toLowerCase().indexOf(filter) < 0) return;
+      var have = !!wepOwned[W.id];
+      var held = wepCur === W.id;
+      var row = document.createElement("div");
+      row.className = "shopitem" + (held ? " active" : have ? " owned" : "");
+
+      var sw = "<span class='sw' style=\"color:" + W.look.color +
+               ";text-shadow:0 0 9px " + W.look.color + "\">" +
+               esc(lookGlyph(W.look.shape)) + "</span>";
+
+      var info = document.createElement("div");
+      info.className = "info";
+      info.innerHTML = sw + "<b>" + esc(W.name) + "</b> " +
+        "<span class='dmg'>" + W.base + " DMG</span><br>" +
+        "<span class='pat'>" + esc(PATTERN_NAMES[W.pattern] || W.pattern) + "</span> · " +
+        "<span class='desc'>" + esc(W.desc) + "</span>";
+
+      var btn = document.createElement("button");
+      btn.className = "buy";
+      if (held){
+        btn.textContent = "WIELDED";
+        btn.disabled = true;
+      } else if (have){
+        btn.textContent = "WIELD";
+        btn.onclick = function(){ wieldWeapon(W.id); };
+      } else {
+        btn.textContent = W.cost + " G";
+        btn.disabled = gold < W.cost;
+        btn.onclick = function(){ buyWeapon(W); };
+      }
+
+      row.appendChild(info);
+      row.appendChild(btn);
+      cont.appendChild(row);
+    })(WEAPONS[i]);
+  }
+  if (cnt) cnt.textContent = owned + " / " + WEAPONS.length + " OWNED";
+}
+
+function refreshShop(){
+  document.getElementById("shopgold").textContent = gold;
+  refreshWeapons();
+  var cont = document.getElementById("shopitems");
+  var filterEl = document.getElementById("shopfilter");
+  var filter = (filterEl ? filterEl.value : "").toLowerCase().trim();
+  var owned = 0;
+  cont.innerHTML = "";
+  for (var i = 0; i < UPGRADES.length; i++){
+    (function(u){
+      var lvl = upg[u.id] || 0;
+      if (lvl > 0) owned++;
+      // The catalogue is long: the search box narrows it down live.
+      if (filter && (u.name + " " + u.desc).toLowerCase().indexOf(filter) < 0) return;
+      var maxed = lvl >= u.max;
+      var cost = upgradeCost(u);
+      var row = document.createElement("div");
+      row.className = "shopitem" + (maxed ? " owned" : "");
+
+      var info = document.createElement("div");
+      info.className = "info";
+      // No sprite swatch: upgrades never change how the bolt looks, so the row
+      // shows only the numbers (level, cost) and what it does.
+      info.innerHTML = "<b>" + esc(u.name) + "</b> " +
+        "<span class='lvl'>Lv " + lvl + "/" + u.max + "</span><br>" +
+        "<span class='desc'>" + esc(u.desc) + "</span>";
+
+      var btn = document.createElement("button");
+      btn.className = "buy";
+      if (maxed){
+        btn.textContent = u.max === 1 ? "OWNED" : "MAX";
+        btn.disabled = true;
+      } else {
+        btn.textContent = cost + " G";
+        btn.disabled = gold < cost;
+        btn.onclick = function(){ buyUpgrade(u); };
+      }
+
+      row.appendChild(info);
+      row.appendChild(btn);
+      cont.appendChild(row);
+    })(UPGRADES[i]);
+  }
+  var cnt = document.getElementById("shopcount");
+  if (cnt) cnt.textContent = owned + " / " + UPGRADES.length + " BOUGHT";
+}
+
+function buyUpgrade(u){
+  if ((upg[u.id] || 0) >= u.max) return;
+  var cost = upgradeCost(u);
+  if (gold < cost) return;
+  // The server owns the wallet: it validates the purchase and answers with a
+  // fresh wallet message, which redraws the shop.
+  playSound("buy", 0.6);
+  send({ t: "buy", up: u.id });
+}
+
+// Weapon types are bought once and then switched between freely. Like gold,
+// ownership lives on the server: we ask for a purchase and it answers with an
+// updated wallet (which carries the owned set).
+function buyWeapon(W){
+  if (wepOwned[W.id]) { wieldWeapon(W.id); return; }
+  if (gold < W.cost) return;
+  playSound("buy", 0.6);
+  send({ t: "buyw", id: W.id });
+}
+
+// Switch to an owned weapon. The profile is recomputed from the new base
+// damage / pattern / sprite, and the choice is mirrored to the server so it
+// survives a reload. (The server re-broadcasts a wallet; we apply locally too
+// so the switch feels instant.)
+function wieldWeapon(id){
+  if (!wepOwned[id]) return;
+  if (wepCur === id) return;
+  wepCur = id;
+  invalidateProfile();
+  send({ t: "wield", id: id });
+  if (shopOpen) refreshShop();
 }
 
 canvas.addEventListener("mousemove", function(e){
@@ -1133,10 +2396,21 @@ window.addEventListener("keydown", function(e){
   var k = e.key.toLowerCase();
   if (k === " " || k === "arrowup" || k === "arrowdown" || k === "arrowleft" || k === "arrowright")
     e.preventDefault();
-  if (k === "enter"){ openChat(); return; }
   if (k === "escape"){
+    if (shopOpen){ closeShop(); return; }
     if (state === "play"){ state = "pause"; show("paused"); }
     else if (state === "pause"){ state = "play"; hide("paused"); }
+    return;
+  }
+  if (shopOpen) return;
+  if (k === "enter"){ openChat(); return; }
+  if (k === "e" && scene === "hub" && nearShop()){ openShop(); return; }
+  // Number keys 1-9 jump straight to the nth owned weapon type, in catalogue
+  // order, without opening the shop.
+  if (k >= "1" && k <= "9"){
+    var owned = WEAPONS.filter(function(w){ return wepOwned[w.id]; });
+    var pick = owned[+k - 1];
+    if (pick) wieldWeapon(pick.id);
     return;
   }
   keys[k] = true;
@@ -1151,12 +2425,185 @@ document.getElementById("chat").addEventListener("keydown", function(e){
 
 document.getElementById("retrybtn").addEventListener("click", returnToHub);
 document.getElementById("leavebtn").addEventListener("click", returnToHub);
-document.getElementById("joinbtn").addEventListener("click", joinGame);
-document.getElementById("nameinput").addEventListener("keydown", function(e){
-  if (e.key === "Enter"){ e.preventDefault(); joinGame(); }
-});
+document.getElementById("shopclose").addEventListener("click", closeShop);
+// The two tabs of the shop's tab strip. The choice sticks for the session, so
+// reopening the shop lands you back where you were.
+document.getElementById("tab-weapons").addEventListener("click", function(){ setShopTab("weapons"); });
+document.getElementById("tab-upgrades").addEventListener("click", function(){ setShopTab("upgrades"); });
+applyShopTab();
+// Typing in the catalogue search must not reach the game's key handlers
+// (space would be swallowed as "fire", Escape as "close shop").
+var shopFilterEl = document.getElementById("shopfilter");
+if (shopFilterEl){
+  shopFilterEl.addEventListener("input", function(){ if (shopOpen) refreshShop(); });
+  shopFilterEl.addEventListener("keydown", function(e){ e.stopPropagation(); });
+  shopFilterEl.addEventListener("keyup", function(e){ e.stopPropagation(); });
+}
+document.getElementById("loginbtn").addEventListener("click", function(){ doAuth("login"); });
+document.getElementById("signupbtn").addEventListener("click", function(){ doAuth("signup"); });
+function authSubmit(e){ if (e.key === "Enter"){ e.preventDefault(); doAuth("login"); } }
+document.getElementById("userinput").addEventListener("keydown", authSubmit);
+document.getElementById("passinput").addEventListener("keydown", authSubmit);
 
 window.addEventListener("blur", function(){ mouse.down = false; keys = {}; });
+
+/* ========================= MOBILE TOUCH CONTROLS ========================= */
+// Phones get an on-screen D-pad (bottom-left), a twin-stick style aim & auto
+// fire pad (bottom-right) and SHOP / CHAT / PAUSE buttons. Desktop never sees
+// any of this: the whole overlay stays hidden by CSS unless the device is
+// touch capable AND the screen is phone-sized (see the @media rules above).
+// Buttons write straight into `keys` / `mouse.down`, the exact same state the
+// keyboard and mouse produce, so all game logic is untouched.
+var IS_TOUCH = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+if (IS_TOUCH) document.body.classList.add("touch-device");
+
+if (IS_TOUCH){
+  var MOBILE = { aiming:false, aimAngle:0, tid:-1 };
+
+  // D-pad. Each button handles its own touch, so two thumbs give diagonals.
+  var padBtns = document.querySelectorAll(".dpad .btn");
+  for (var mi = 0; mi < padBtns.length; mi++){
+    (function(btn){
+      var k = btn.getAttribute("data-key");
+      var on = function(e){ e.preventDefault(); e.stopPropagation(); keys[k] = true; btn.classList.add("pressed"); };
+      var off = function(e){ if (e){ e.preventDefault(); e.stopPropagation(); } keys[k] = false; btn.classList.remove("pressed"); };
+      btn.addEventListener("touchstart", on, { passive:false });
+      btn.addEventListener("touchend", off, { passive:false });
+      btn.addEventListener("touchcancel", off, { passive:false });
+    })(padBtns[mi]);
+  }
+
+  // Aim stick: dragging past a small dead zone aims and auto-fires, exactly
+  // like holding the mouse button down while aiming on desktop.
+  var mzone = document.getElementById("aimzone");
+  var mstick = document.getElementById("aimstick");
+  function aimMove(t){
+    var r = mzone.getBoundingClientRect();
+    var dx = t.clientX - (r.left + r.width / 2), dy = t.clientY - (r.top + r.height / 2);
+    var d = Math.sqrt(dx * dx + dy * dy);
+    var DEAD = 14, MAX = 36;
+    if (d < DEAD){ MOBILE.aiming = false; mouse.down = false; mstick.style.transform = "translate(0px,0px)"; return; }
+    MOBILE.aiming = true;
+    MOBILE.aimAngle = Math.atan2(dy, dx);
+    mouse.down = true; // the existing fire check already reads this
+    var cl = Math.min(d, MAX);
+    mstick.style.transform = "translate(" + (dx / d * cl).toFixed(1) + "px," + (dy / d * cl).toFixed(1) + "px)";
+  }
+  function aimEnd(e){
+    for (var i = 0; i < e.changedTouches.length; i++){
+      if (e.changedTouches[i].identifier !== MOBILE.tid) continue;
+      MOBILE.tid = -1; MOBILE.aiming = false; mouse.down = false;
+      mstick.style.transform = "translate(0px,0px)";
+    }
+    e.preventDefault(); e.stopPropagation();
+  }
+  mzone.addEventListener("touchstart", function(e){
+    e.preventDefault(); e.stopPropagation();
+    if (MOBILE.tid !== -1) return;
+    MOBILE.tid = e.changedTouches[0].identifier;
+    aimMove(e.changedTouches[0]);
+  }, { passive:false });
+  mzone.addEventListener("touchmove", function(e){
+    e.preventDefault(); e.stopPropagation();
+    for (var i = 0; i < e.changedTouches.length; i++)
+      if (e.changedTouches[i].identifier === MOBILE.tid) aimMove(e.changedTouches[i]);
+  }, { passive:false });
+  mzone.addEventListener("touchend", aimEnd, { passive:false });
+  mzone.addEventListener("touchcancel", aimEnd, { passive:false });
+
+  // SHOP = E, CHAT = Enter, PAUSE = Esc: same behaviour as the keyboard.
+  document.getElementById("mb-chat").addEventListener("click", function(e){
+    e.preventDefault();
+    if (typing || shopOpen || scene === "login") return;
+    openChat();
+  });
+  document.getElementById("mb-shop").addEventListener("click", function(e){
+    e.preventDefault();
+    if (typing || shopOpen || scene !== "hub" || !nearShop()) return;
+    openShop();
+  });
+  document.getElementById("mb-pause").addEventListener("click", function(e){
+    e.preventDefault();
+    if (scene === "login") return;
+    if (typing){ closeChat(); return; }
+    if (shopOpen){ closeShop(); return; }
+    if (state === "play"){ state = "pause"; show("paused"); }
+    else if (state === "pause"){ state = "play"; hide("paused"); }
+  });
+
+  // Taps on the bare canvas would otherwise synthesise mouse events (stray
+  // shots), and drag gestures could scroll or zoom the page mid-play.
+  canvas.addEventListener("touchstart", function(e){ e.preventDefault(); }, { passive:false });
+  document.getElementById("stage").addEventListener("touchmove", function(e){ e.preventDefault(); }, { passive:false });
+  window.addEventListener("touchstart", unlockAudio, { passive:true });
+}
+
+/* ========================= AUDIO ========================= */
+// Tiny 8-bit chiptune SFX + monster voices, decoded once and played through the
+// Web Audio API. The context is created on the first user gesture so browser
+// autoplay policies are satisfied; everything degrades silently if unsupported.
+var actx = null, masterGain = null;
+var SOUNDS = {};
+var SFX_NAMES = ["shoot","hit","hurt","death","pickup","key",
+                 "portal","generator","levelup","shop","buy","chat",
+                 "voice_grunt","voice_ghost","voice_demon"];
+// Monster type -> voice sample.
+var MONSTER_VOICE = { grunt: "voice_grunt", ghost: "voice_ghost",
+                      demon: "voice_demon" };
+
+function initAudio(){
+  if (actx) return;
+  var AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  try {
+    actx = new AC();
+    masterGain = actx.createGain();
+    masterGain.gain.value = 0.55;
+    masterGain.connect(actx.destination);
+  } catch (e){ actx = null; return; }
+  for (var i = 0; i < SFX_NAMES.length; i++)
+    loadAudio(SFX_NAMES[i], "audio/" + SFX_NAMES[i] + ".ogg");
+}
+
+function loadAudio(name, url){
+  if (!actx) return;
+  fetch(url).then(function(r){ return r.arrayBuffer(); })
+    .then(function(b){ return actx.decodeAudioData(b); })
+    .then(function(dec){
+      SOUNDS[name] = dec;
+    }).catch(function(){});
+}
+
+function playSound(name, vol, rate){
+  if (!actx || actx.state === "suspended" || !SOUNDS[name]) return;
+  var src = actx.createBufferSource();
+  src.buffer = SOUNDS[name];
+  // Weapons pick their own pitch: the bass cannon thunders, the chipmunk
+  // chamber squeaks. playbackRate is an AudioParam (a getter-only object) in
+  // every modern browser, so the value goes on .value; only ancient WebKit
+  // exposed it as a plain number.
+  var pitch = (rate && rate > 0) ? rate : 1;
+  if (src.playbackRate && typeof src.playbackRate === "object") src.playbackRate.value = pitch;
+  else src.playbackRate = pitch;
+  var g = actx.createGain();
+  g.gain.value = (vol === undefined) ? 1 : vol;
+  src.connect(g); g.connect(masterGain);
+  try { src.start(0); } catch (e) {}
+}
+
+// Play the vocalization for a given monster type (no-op if unknown).
+function playVoice(type, vol){
+  var v = MONSTER_VOICE[type];
+  if (v) playSound(v, vol);
+}
+
+// Resume / unlock the context on any gesture (join click, keystroke, etc.).
+function unlockAudio(){
+  initAudio();
+  if (actx && actx.state === "suspended") actx.resume();
+}
+window.addEventListener("pointerdown", unlockAudio);
+window.addEventListener("keydown", unlockAudio);
 
 /* ========================= MMO HUB ========================= */
 
@@ -1164,7 +2611,7 @@ var HUB_TW = 40, HUB_TH = 28;
 var HUB_W = HUB_TW * TILE, HUB_H = HUB_TH * TILE;
 var HUB_SPEED = 172;
 
-var hubGrid, portalPos, hubSpawn, hubPlayer, hubCam, houses, fountainPos;
+var hubGrid, portalPos, hubSpawn, hubPlayer, hubCam, houses, fountainPos, shopRect, shopPos;
 var remotes = {};
 var scene = "login";
 var net = null, myId = null, myName = "", myHue = 0;
@@ -1216,6 +2663,14 @@ function genHub(){
         hubGrid[hy][hx] = 7;
   }
 
+  // LEO'S SHOP: a distinct building on the east side of the square. Its
+  // footprint is solid; the doorway out front is the shop trigger point.
+  shopRect = { x:26, y:11, w:4, h:3 };
+  for (var shy = shopRect.y; shy < shopRect.y + shopRect.h; shy++)
+    for (var shx = shopRect.x; shx < shopRect.x + shopRect.w; shx++)
+      hubGrid[shy][shx] = 7;
+  shopPos = { x:(shopRect.x + shopRect.w / 2) * TILE, y:(shopRect.y + shopRect.h) * TILE + 18 };
+
   // Market stalls on the plaza corners.
   hubGrid[11][15] = 11; hubGrid[11][24] = 11;
   hubGrid[18][15] = 11; hubGrid[18][24] = 11;
@@ -1264,6 +2719,25 @@ function genHub(){
       if (rnd() < 0.13) hubGrid[ty][tx] = 2;
     }
   }
+  // Keep buildings unobstructed: no tree may stand in the tile directly in
+  // front of a house (the tile to its south), nor hug its sides/back, where it
+  // would poke out from behind the roof line.
+  function clearBuildingRings(left, right, top, bottom){
+    for (var bxx = left; bxx <= right; bxx++){
+      if (top - 1 >= 1 && hubGrid[top - 1][bxx] === 2) hubGrid[top - 1][bxx] = 0;
+      if (bottom + 1 <= HUB_TH - 2 && hubGrid[bottom + 1][bxx] === 2) hubGrid[bottom + 1][bxx] = 0;
+    }
+    for (var byy = top - 1; byy <= bottom + 1; byy++){
+      if (byy < 1 || byy > HUB_TH - 2) continue;
+      if (left - 1 >= 1 && hubGrid[byy][left - 1] === 2) hubGrid[byy][left - 1] = 0;
+      if (right + 1 <= HUB_TW - 2 && hubGrid[byy][right + 1] === 2) hubGrid[byy][right + 1] = 0;
+    }
+  }
+  for (var ci = 0; ci < houses.length; ci++)
+    clearBuildingRings(houses[ci].x, houses[ci].x + houses[ci].w - 1,
+                       houses[ci].y, houses[ci].y + houses[ci].h - 1);
+  clearBuildingRings(shopRect.x, shopRect.x + shopRect.w - 1,
+                     shopRect.y, shopRect.y + shopRect.h - 1);
   // Dense treeline around the village edges.
   for (var bx = 1; bx < HUB_TW-1; bx++){
     if (hubGrid[1][bx] === 0 && rnd() < 0.6) hubGrid[1][bx] = 2;
@@ -1304,13 +2778,13 @@ function connect(){
   try { net = new WebSocket(proto + "://" + location.host + "/ws"); }
   catch (e){ setStatus("could not reach the world."); return; }
   net.onopen = function(){
-    document.getElementById("joinbtn").disabled = false;
-    setStatus("connected — choose a name.");
+    authButtons(true);
+    setStatus("connected — log in or create an account.");
   };
   net.onerror = function(){ setStatus("connection error."); };
   net.onclose = function(){
     net = null;
-    document.getElementById("joinbtn").disabled = true;
+    authButtons(false);
     setStatus(scene === "login" ? "lost connection. refresh to rejoin." : "disconnected.");
   };
   net.onmessage = function(ev){ handleNet(ev.data); };
@@ -1318,19 +2792,27 @@ function connect(){
 function setStatus(s){ document.getElementById("loginstatus").textContent = s; }
 function send(obj){ if (net && net.readyState === 1) net.send(JSON.stringify(obj)); }
 
-function joinGame(){
+function authButtons(on){
+  document.getElementById("loginbtn").disabled = !on;
+  document.getElementById("signupbtn").disabled = !on;
+}
+function doAuth(kind){
   if (!net || net.readyState !== 1) return;
-  var name = document.getElementById("nameinput").value.trim() || "Wanderer";
-  send({ t: "join", name: name });
-  document.getElementById("joinbtn").disabled = true;
-  setStatus("entering the hub…");
+  var name = document.getElementById("userinput").value.trim();
+  var pass = document.getElementById("passinput").value;
+  if (!name){ setStatus("enter a username."); return; }
+  if (pass.length < 4){ setStatus("password needs at least 4 characters."); return; }
+  unlockAudio();
+  authButtons(false);
+  send({ t: kind, name: name, pass: pass });
+  setStatus(kind === "signup" ? "creating your account…" : "logging in…");
 }
 
 function addRemote(p){
   if (!p || p.id === myId) return;
   remotes[p.id] = {
     id: p.id, name: p.name, x: p.x, y: p.y, tx: p.x, ty: p.y,
-    dir: p.dir || "down", zone: p.zone || "hub", hue: p.hue || 0, speech: null
+    dir: p.dir || "down", zone: p.zone || "hub", hue: p.hue || 0, speech: null, anim:0, animTimer:0
   };
 }
 
@@ -1340,10 +2822,25 @@ function handleNet(raw){
 
   if (m.t === "welcome"){
     myId = m.id; myName = m.name; myHue = m.hue;
+    gold = m.gold || 0;
+    upg = Object.assign(defaultUpg(), m.upg || {});
+    applyWeaponState(m);
+    invalidateProfile();
     remotes = {};
     for (var i = 0; i < m.players.length; i++) addRemote(m.players[i]);
     enterHub(m.x, m.y);
     lastPortalCd = 1.2;
+  } else if (m.t === "authfail"){
+    authButtons(true);
+    setStatus(m.err || "could not sign in.");
+    return;
+  } else if (m.t === "wallet"){
+    gold = m.gold || 0;
+    upg = Object.assign(defaultUpg(), m.upg || {});
+    applyWeaponState(m);
+    invalidateProfile();
+    if (shopOpen) refreshShop();
+    return;
   } else if (m.t === "sync"){
     remotes = {};
     for (var s = 0; s < m.players.length; s++) addRemote(m.players[s]);
@@ -1351,17 +2848,94 @@ function handleNet(raw){
   } else if (m.t === "join"){
     addRemote(m.p); updateOnline();
   } else if (m.t === "leave"){
-    delete remotes[m.id]; updateOnline();
+    delete remotes[m.id]; delete remoteShots[m.id]; updateOnline();
+  } else if (m.t === "shots"){
+    // The server says this player has no bolts in flight any more (they
+    // died mid-volley): stop drawing the ones they last reported.
+    delete remoteShots[m.id];
+  } else if (m.t === "dungeon"){
+    if (!pendingDungeon && scene !== "dungeon") return;
+    applyGrid(m.grid);
+    level = m.lv || 1;
+    remotes = {};
+    remoteShots = {};
+    for (var d = 0; d < m.players.length; d++) addRemote(m.players[d]);
+    updateOnline();
+    if (pendingDungeon) startDungeon();
+  } else if (m.t === "state"){
+    if (scene !== "dungeon") return;
+    applyState(m);
+  } else if (m.t === "level"){
+    // The whole group stepped through the exit: fresh floor, same run.
+    if (scene !== "dungeon") return;
+    applyGrid(m.grid);
+    level = m.lv;
+    resetRun();
+    if (player){
+      player.x = WORLD_W/2; player.y = WORLD_H/2;
+      if (state === "play"){
+        player.hp = Math.min(player.maxHp, player.hp + 30);
+        playSound("levelup", 0.6);
+      }
+    }
+  } else if (m.t === "kill"){
+    if (scene !== "dungeon") return;
+    gone[m.i] = 1;
+    removeEntity(enemies, m.i);
+    var et = ENEMY[m.tp];
+    playVoice(m.tp, 0.75);
+    spawnBits(m.x, m.y, et ? et.tint : "#5ec060", 12, 120);
+    if (m.by === myId){ kills++; score += (et ? et.gold : 5) + 5; }
+  } else if (m.t === "gendead"){
+    if (scene !== "dungeon") return;
+    gone[m.i] = 1;
+    for (var gi2 = 0; gi2 < generators.length; gi2++){
+      if (generators[gi2].id === m.i){
+        generators[gi2].alive = false;
+        generators[gi2].hp = 0;
+        break;
+      }
+    }
+    playSound("generator", 0.7);
+    spawnBits(m.x, m.y, "#a06cd0", 22, 150);
+    spawnBits(m.x, m.y, "#f6c744", 10, 120);
+    if (m.by === myId){ score += 40; }
+  } else if (m.t === "pickup"){
+    if (scene !== "dungeon") return;
+    gone[m.i] = 1;
+    removeEntity(pickups, m.i);
+    if (m.tp === "key"){
+      // The key opens the exit for everyone below.
+      hasKey = true; exitActive = true;
+      playSound("key", 0.6);
+    } else if (m.tp === "food"){
+      playSound("pickup", 0.5);
+      spawnBits(m.x, m.y, "#7ef08a", 6, 70);
+      if (m.by === myId && player) player.hp = Math.min(player.maxHp, player.hp + 20);
+    } else {
+      playSound("pickup", 0.5);
+      spawnBits(m.x, m.y, "#f6c744", 8, 90);
+      if (m.by === myId){ score += 10; }
+    }
+  } else if (m.t === "hurt"){
+    if (scene !== "dungeon" || !player || state !== "play") return;
+    if (m.tp) playVoice(m.tp, 0.45);
+    damagePlayer(m.d);
   } else if (m.t === "pos"){
     var r = remotes[m.id];
     if (r){ r.tx = m.x; r.ty = m.y; r.dir = m.dir; r.zone = m.zone || "hub"; updateOnline(); }
+    // Gauntlet players ship their live bolts along with their position.
+    if (m.zone === "dungeon") setRemoteShots(m.id, m.sh);
+    else delete remoteShots[m.id];
   } else if (m.t === "chat"){
     var now = performance.now();
     if (m.id === myId){
-      if (hubPlayer) hubPlayer.speech = { text: m.text, until: now + 5000 };
+      if (scene === "dungeon" && player) player.speech = { text: m.text, until: now + 5000 };
+      else if (hubPlayer) hubPlayer.speech = { text: m.text, until: now + 5000 };
     } else {
       var r2 = remotes[m.id];
       if (r2) r2.speech = { text: m.text, until: now + 5000 };
+      playSound("chat", 0.35);
     }
     pushChatLog(m.name, m.text, m.id === myId);
   }
@@ -1377,25 +2951,56 @@ function enterHub(x, y){
   hide("login"); hide("over"); hide("paused");
   document.getElementById("chatlog").classList.add("on");
   document.getElementById("online").classList.add("on");
-  document.getElementById("hubhint").classList.add("on");
+  canvas.style.cursor = "default";
   updateOnline();
 }
 
 function enterDungeon(){
+  // Ask the server to descend: it owns the run and replies with the floor
+  // layout, the monsters and the list of players already down there. The
+  // reply is retried a few times in case it is lost.
   send({ t: "enter" });
+  playSound("portal", 0.6);
+  pendingDungeon = true;
+  dungeonTries = 0;
+  lastPortalCd = 1;
+  scheduleEnter();
+}
+
+function scheduleEnter(){
+  if (dungeonTimeout) clearTimeout(dungeonTimeout);
+  dungeonTimeout = setTimeout(function(){
+    if (!pendingDungeon) return;
+    if (++dungeonTries > 4){
+      pendingDungeon = false;
+      pushChatLog("server", "the gauntlet did not answer — step into the gate again", false);
+      return;
+    }
+    send({ t: "enter" });
+    scheduleEnter();
+  }, 900);
+}
+
+function startDungeon(){
+  pendingDungeon = false;
+  if (dungeonTimeout){ clearTimeout(dungeonTimeout); dungeonTimeout = null; }
   scene = "dungeon";
-  document.getElementById("chatlog").classList.remove("on");
-  document.getElementById("online").classList.remove("on");
+  document.getElementById("chatlog").classList.add("on");
+  document.getElementById("online").classList.add("on");
   document.getElementById("hubhint").classList.remove("on");
   document.getElementById("hud").style.display = "block";
+  canvas.style.cursor = "none";
+  updateOnline();
   startGame();
 }
 
 function returnToHub(){
   send({ t: "exit" });
+  pendingDungeon = false;
   hide("over"); hide("paused");
   state = "start";
-  enterHub(hubSpawn.x + 48, hubSpawn.y);
+  remotes = {};
+  enterHub(hubSpawn.x, hubSpawn.y);
   lastPortalCd = 2.5;
 }
 
@@ -1414,14 +3019,32 @@ function esc(s){
   });
 }
 function updateOnline(){
+  var zone = scene === "dungeon" ? "dungeon" : "hub";
   var n = 1;
-  for (var id in remotes) if (remotes[id].zone === "hub") n++;
+  for (var id in remotes) if (remotes[id].zone === zone) n++;
   document.getElementById("online").innerHTML = "ONLINE <b>" + n + "</b>";
+}
+
+// Smoothly walk remote players toward their last reported position and expire
+// finished speech bubbles. Shared by the hub and the Gauntlet.
+function stepRemotes(dt, zone, now){
+  for (var id in remotes){
+    var r = remotes[id];
+    if (r.zone !== zone) continue;
+    var k = Math.min(1, dt * 12);
+    var dx = (r.tx - r.x) * k, dy = (r.ty - r.y) * k;
+    r.x += dx; r.y += dy;
+    if (dx*dx + dy*dy > 0.4){
+      r.animTimer = (r.animTimer || 0) + dt;
+      if (r.animTimer > 0.14){ r.animTimer = 0; r.anim = ((r.anim || 0) + 1) & 3; }
+    } else if (r.animTimer){ r.anim = 0; r.animTimer = 0; }
+    if (r.speech && r.speech.until < now) r.speech = null;
+  }
 }
 
 function updateHub(dt){
   var mx = 0, my = 0;
-  if (!typing){
+  if (!typing && !shopOpen){
     if (keys["w"] || keys["arrowup"]) my -= 1;
     if (keys["s"] || keys["arrowdown"]) my += 1;
     if (keys["a"] || keys["arrowleft"]) mx -= 1;
@@ -1432,29 +3055,40 @@ function updateHub(dt){
     hubMove(hubPlayer, (mx/len) * HUB_SPEED * dt, (my/len) * HUB_SPEED * dt);
     if (Math.abs(mx) > Math.abs(my)) hubPlayer.dir = mx < 0 ? "left" : "right";
     else hubPlayer.dir = my < 0 ? "up" : "down";
+    if (hubPlayer.animTimer !== undefined) {
+      hubPlayer.animTimer += dt;
+      if (hubPlayer.animTimer > 0.14) { hubPlayer.animTimer = 0; hubPlayer.anim = (hubPlayer.anim + 1) & 3; }
+    }
+  } else {
+    if (hubPlayer.animTimer !== undefined) { hubPlayer.anim = 0; hubPlayer.animTimer = 0; }
   }
 
   sendT -= dt;
-  if (sendT <= 0){ sendT = 0.067; send({ t:"pos", x:hubPlayer.x, y:hubPlayer.y, dir:hubPlayer.dir }); }
+  if (sendT <= 0){ sendT = 0.067; send({ t:"pos", x:hubPlayer.x, y:hubPlayer.y, dir:hubPlayer.dir, zone:"hub" }); }
 
   lastPortalCd -= dt;
-  if (lastPortalCd <= 0 && dist(hubPlayer.x, hubPlayer.y, portalPos.x, portalPos.y) < 26){
+  if (lastPortalCd <= 0 && !pendingDungeon &&
+      dist(hubPlayer.x, hubPlayer.y, portalPos.x, portalPos.y) < 26){
     enterDungeon();
     return;
   }
 
-  var now = performance.now();
-  for (var id in remotes){
-    var r = remotes[id];
-    var k = Math.min(1, dt * 12);
-    r.x += (r.tx - r.x) * k;
-    r.y += (r.ty - r.y) * k;
-    if (r.speech && r.speech.until < now) r.speech = null;
+  // Shop doorway prompt. The gate reminder is gone; the panel only appears
+  // while a doorway is in reach, and stays hidden behind the shop overlay.
+  var hint = document.getElementById("hubhint");
+  if (shopOpen || !nearShop()){
+    hint.classList.remove("on");
+  } else {
+    hint.textContent = IS_TOUCH ? "TAP SHOP TO ENTER LEO'S SHOP" : "PRESS E TO ENTER LEO'S SHOP";
+    hint.classList.add("on");
   }
+
+  var now = performance.now();
+  stepRemotes(dt, "hub", now);
   if (hubPlayer.speech && hubPlayer.speech.until < now) hubPlayer.speech = null;
 
-  hubCam.x = clamp(hubPlayer.x - VIEW_W/2, 0, Math.max(0, HUB_W - VIEW_W));
-  hubCam.y = clamp(hubPlayer.y - VIEW_H/2, 0, Math.max(0, HUB_H - VIEW_H));
+  hubCam.x = Math.floor(clamp(hubPlayer.x - VIEW_W/2, 0, Math.max(0, HUB_W - VIEW_W)));
+  hubCam.y = Math.floor(clamp(hubPlayer.y - VIEW_H/2, 0, Math.max(0, HUB_H - VIEW_H)));
 }
 
 function drawNameTag(name, x, y, self){
@@ -1468,11 +3102,19 @@ function drawNameTag(name, x, y, self){
   ctx.textAlign = "left";
 }
 
-function heroSpriteFor(dir){
-  if (dir === "up") return "hero_up";
-  if (dir === "left") return "hero_side_f";
-  if (dir === "right") return "hero_side";
-  return "hero_down";
+function drawPrompt(text, x, y){
+  ctx.font = "12px ui-monospace, monospace";
+  ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  var w = ctx.measureText(text).width;
+  ctx.fillStyle = "rgba(6,8,14,0.8)";
+  ctx.fillRect(x - w/2 - 6, y - 13, w + 12, 17);
+  ctx.fillStyle = "#f6c744";
+  ctx.fillText(text, x, y);
+  ctx.textAlign = "left";
+}
+
+function heroSpriteFor(dir, anim){
+  return heroFrameKey(dir, anim || 0);
 }
 
 function drawFence(cx, cy){
@@ -1484,11 +3126,12 @@ function drawFence(cx, cy){
   ctx.fillRect(cx + TILE/2 - 7, cy - 13, 4, 24);
 }
 
-function drawHouse(tx, ty, tw, th){
+function drawHouse(tx, ty, tw, th, roof){
   var x = tx*TILE - hubCam.x, y = ty*TILE - hubCam.y;
   var W = tw*TILE, H = th*TILE;
   var roofH = Math.max(20, H * 0.46);
   var eave = 7, base = y + H;
+  var roofCol = roof || "#b8432f";
 
   ctx.fillStyle = "rgba(0,0,0,0.28)";
   ctx.beginPath();
@@ -1502,9 +3145,6 @@ function drawHouse(tx, ty, tw, th){
   ctx.fillRect(x + eave, y + roofH, W - eave*2, 3);
   ctx.fillRect(x + eave, y + roofH, 3, H - roofH);
   ctx.fillRect(x + W - eave - 3, y + roofH, 3, H - roofH);
-  ctx.fillRect(x + W/2 - 2, y + roofH + 3, 4, H - roofH - 3);
-  ctx.fillStyle = "rgba(0,0,0,0.10)";
-  ctx.fillRect(x + eave, base - 6, W - eave*2, 6);
 
   // Door and windows.
   ctx.fillStyle = "#5a3216";
@@ -1519,7 +3159,7 @@ function drawHouse(tx, ty, tw, th){
   ctx.strokeRect(x + W*0.74 - 8, y + roofH + 12, 16, 12);
 
   // Gabled roof.
-  ctx.fillStyle = "#b8432f";
+  ctx.fillStyle = roofCol;
   ctx.beginPath();
   ctx.moveTo(x - 5, y + roofH);
   ctx.lineTo(x + W/2, y - 4);
@@ -1537,6 +3177,37 @@ function drawHouse(tx, ty, tw, th){
   ctx.lineTo(x + W/2, y - 4);
   ctx.lineTo(x + W + 5, y + roofH);
   ctx.stroke();
+}
+
+function drawShopSign(){
+  if (!shopRect) return;
+  var bty = shopRect.y, btx = shopRect.x;
+  var x = btx * TILE - hubCam.x;
+  var y = bty * TILE - hubCam.y;
+  var roofH = Math.max(20, shopRect.h * TILE * 0.46);
+  var W = shopRect.w * TILE;
+  var sw = 78, sh = 26;
+  var sx = x + W/2 - sw/2;
+  var sy = y + roofH + 2;
+  var swing = Math.sin(performance.now() / 600) * 2;
+
+  ctx.save();
+  ctx.translate(0, swing);
+  ctx.fillStyle = "#3a2a12";
+  ctx.fillRect(x + W/2 - 2, sy - 8, 4, 9);
+  ctx.fillStyle = "#7a4a24";
+  ctx.fillRect(sx, sy, sw, sh);
+  ctx.fillStyle = "#e8d6b0";
+  ctx.fillRect(sx + 3, sy + 3, sw - 6, sh - 6);
+  ctx.fillStyle = "#b8432f";
+  ctx.font = "bold 14px ui-monospace, monospace";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText("SHOP", sx + sw/2, sy + sh/2 + 1);
+  ctx.fillStyle = "#f6c744";
+  ctx.beginPath(); ctx.arc(sx + 12, sy + sh/2, 5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(sx + sw - 12, sy + sh/2, 5, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
 }
 
 function renderHub(){
@@ -1557,47 +3228,23 @@ function renderHub(){
     }
   }
 
-  // Decoration layer.
+  // Prop floor shadows go down first so the vertical layer sits on top of them.
   for (var dy = r0; dy < r1; dy++){
     for (var dx = t0; dx < t1; dx++){
       if (dx < 0 || dy < 0 || dx >= HUB_TW || dy >= HUB_TH) continue;
       var v = hubGrid[dy][dx];
-      var cx = dx*TILE - hubCam.x + TILE/2, cy = dy*TILE - hubCam.y + TILE/2;
-      if (v === 2){ shadow(cx, cy + 12, 9); drawSprite("tree", cx, cy - 8, TILE + 8); }
-      else if (v === 5){ shadow(cx, cy + 12, 8); drawSprite("statue", cx, cy - 2, TILE + 2); }
-      else if (v === 8) drawFence(cx, cy);
-      else if (v === 9){ shadow(cx, cy + 12, 9); drawSprite("well", cx, cy - 4, TILE); }
-      else if (v === 10){ shadow(cx, cy + 12, 6); drawSprite("lamp", cx, cy - 6, TILE + 6); }
-      else if (v === 11){ shadow(cx, cy + 12, 12); drawSprite("stall", cx, cy - 2, TILE + 6); }
-      else if (v === 12){ drawSprite("bush", cx, cy, TILE); }
+      if (v !== 2 && v !== 5 && v !== 9 && v !== 10 && v !== 11) continue;
+      var sx0 = dx*TILE - hubCam.x + TILE/2, sy0 = dy*TILE - hubCam.y + TILE/2;
+      if (v === 2) shadow(sx0, sy0, 9);
+      else if (v === 5) shadow(sx0, sy0 + 3, 8);
+      else if (v === 9) shadow(sx0, sy0, 9);
+      else if (v === 10) shadow(sx0, sy0 + 1, 6);
+      else shadow(sx0, sy0 + 5, 12);
     }
   }
 
-  // Cottages.
-  for (var hh = 0; hh < houses.length; hh++){
-    var h = houses[hh];
-    drawHouse(h.x, h.y, h.w, h.h);
-  }
-
-  // Fountain in the square (single sprite spanning its 2x2 footprint).
-  var fx = fountainPos.x - hubCam.x, fy = fountainPos.y - hubCam.y;
-  shadow(fx, fy + 18, 26);
-  var fg = ctx.createRadialGradient(fx, fy, 4, fx, fy, 46);
-  fg.addColorStop(0, "rgba(127,216,255,0.35)");
-  fg.addColorStop(1, "rgba(127,216,255,0)");
-  ctx.fillStyle = fg;
-  ctx.beginPath(); ctx.arc(fx, fy, 46, 0, Math.PI*2); ctx.fill();
-  drawSprite("fountain", fx, fy, TILE * 2);
-
-  var ppx = portalPos.x - hubCam.x, ppy = portalPos.y - hubCam.y;
-  var pulse = 1 + Math.sin(performance.now() / 220) * 0.12;
-  var pg = ctx.createRadialGradient(ppx, ppy, 4, ppx, ppy, 42 * pulse);
-  pg.addColorStop(0, "rgba(127,216,255,0.55)");
-  pg.addColorStop(1, "rgba(127,216,255,0)");
-  ctx.fillStyle = pg;
-  ctx.beginPath(); ctx.arc(ppx, ppy, 42 * pulse, 0, Math.PI*2); ctx.fill();
-  drawSprite("portal", ppx, ppy, TILE + 6);
-
+  // Everyone's floor shadow goes down before the buildings, so the cottages
+  // overlap the shadow instead of the shadow bleeding over their walls.
   var order = [];
   for (var id in remotes){
     var r = remotes[id];
@@ -1606,25 +3253,102 @@ function renderHub(){
   order.push({ y: hubPlayer.y, kind: "p", ref: hubPlayer });
   order.sort(function(a, b){ return a.y - b.y; });
 
-  var now = performance.now();
-  for (var o = 0; o < order.length; o++){
-    var it = order[o], ref = it.ref;
-    var ex = ref.x - hubCam.x, ey = ref.y - hubCam.y;
-    shadow(ex, ey, 11);
-    if (it.kind === "p"){
-      drawSprite(heroSpriteFor(ref.dir), ex, ey, TILE);
-      drawNameTag(myName, ex, ey - 20, true);
-    } else {
-      ctx.filter = "hue-rotate(" + ref.hue + "deg)";
-      drawSprite(heroSpriteFor(ref.dir), ex, ey, TILE);
-      ctx.filter = "none";
-      drawNameTag(ref.name, ex, ey - 20, false);
+  for (var so = 0; so < order.length; so++){
+    var sref = order[so].ref;
+    shadow(sref.x - hubCam.x, sref.y - hubCam.y, 11);
+  }
+
+  var fxc = fountainPos.x - hubCam.x, fyc = fountainPos.y - hubCam.y;
+  shadow(fxc, fyc + 18, 26);
+
+  // Vertical layer: props, the fountain, the portal, the buildings and every
+  // character are drawn together sorted by their base Y, so whatever sits
+  // lower on the screen is painted in front. This lets a tree, lamp or house
+  // roof overlap a character standing on the tile behind it.
+  var draws = [];
+  for (var py = r0; py < r1; py++){
+    for (var px = t0; px < t1; px++){
+      if (px < 0 || py < 0 || px >= HUB_TW || py >= HUB_TH) continue;
+      var pv = hubGrid[py][px];
+      if (pv !== 2 && pv !== 5 && pv !== 8 && pv !== 9 && pv !== 10 && pv !== 11 && pv !== 12) continue;
+      draws.push({ y: py*TILE + TILE/2, kind: "prop", v: pv,
+                   x: px*TILE - hubCam.x + TILE/2, y2: py*TILE - hubCam.y + TILE/2 });
     }
-    if (ref.speech){
-      var left = ref.speech.until - now;
+  }
+  draws.push({ y: fountainPos.y, kind: "fountain" });
+  draws.push({ y: portalPos.y, kind: "portal" });
+  for (var hb = 0; hb < houses.length; hb++){
+    var hbp = houses[hb];
+    draws.push({ y: (hbp.y + hbp.h) * TILE, kind: "house", ref: hbp });
+  }
+  if (shopRect) draws.push({ y: (shopRect.y + shopRect.h) * TILE, kind: "shop" });
+  for (var oc = 0; oc < order.length; oc++){
+    draws.push({ y: order[oc].y, kind: order[oc].kind, ref: order[oc].ref });
+  }
+  draws.sort(function(a, b){ return a.y - b.y; });
+
+  var now = performance.now();
+  for (var dr = 0; dr < draws.length; dr++){
+    var D = draws[dr];
+    if (D.kind === "prop"){
+      var cx = D.x, cy = D.y2;
+      if (D.v === 2) drawSprite("tree", cx, cy - 8, TILE + 8);
+      else if (D.v === 5) drawSprite("statue", cx, cy - 2, TILE + 2);
+      else if (D.v === 8) drawFence(cx, cy);
+      else if (D.v === 9) drawSprite("well", cx, cy - 4, TILE);
+      else if (D.v === 10) drawSprite("lamp", cx, cy - 6, TILE + 6);
+      else if (D.v === 11) drawSprite("stall", cx, cy - 2, TILE + 6);
+      else drawSprite("bush", cx, cy, TILE);
+    } else if (D.kind === "fountain"){
+      var fg = ctx.createRadialGradient(fxc, fyc, 4, fxc, fyc, 46);
+      fg.addColorStop(0, "rgba(127,216,255,0.35)");
+      fg.addColorStop(1, "rgba(127,216,255,0)");
+      ctx.fillStyle = fg;
+      ctx.beginPath(); ctx.arc(fxc, fyc, 46, 0, Math.PI*2); ctx.fill();
+      drawSprite("fountain", fxc, fyc, TILE * 2);
+    } else if (D.kind === "portal"){
+      var ppx = portalPos.x - hubCam.x, ppy = portalPos.y - hubCam.y;
+      var pulse = 1 + Math.sin(now / 220) * 0.12;
+      var pg = ctx.createRadialGradient(ppx, ppy, 4, ppx, ppy, 42 * pulse);
+      pg.addColorStop(0, "rgba(127,216,255,0.55)");
+      pg.addColorStop(1, "rgba(127,216,255,0)");
+      ctx.fillStyle = pg;
+      ctx.beginPath(); ctx.arc(ppx, ppy, 42 * pulse, 0, Math.PI*2); ctx.fill();
+      drawSprite("portal", ppx, ppy, TILE + 6);
+    } else if (D.kind === "house"){
+      var hD = D.ref;
+      drawHouse(hD.x, hD.y, hD.w, hD.h);
+    } else if (D.kind === "shop"){
+      drawHouse(shopRect.x, shopRect.y, shopRect.w, shopRect.h, "#3f63c9");
+      drawShopSign();
+    } else {
+      var ref = D.ref;
+      var ex = ref.x - hubCam.x, ey = ref.y - hubCam.y;
+      if (D.kind === "p"){
+        drawSprite(heroFrameKey(ref.dir, ref.anim), ex, ey, TILE);
+      } else {
+        ctx.filter = "hue-rotate(" + ref.hue + "deg)";
+        drawSprite(heroFrameKey(ref.dir, ref.anim), ex, ey, TILE);
+        ctx.filter = "none";
+      }
+    }
+  }
+
+  // Names, speech and prompts stay on top of everything.
+  for (var ov = 0; ov < order.length; ov++){
+    var oref = order[ov].ref;
+    var ox = oref.x - hubCam.x, oy = oref.y - hubCam.y;
+    if (order[ov].kind === "p"){
+      drawNameTag(myName, ox, oy - 20, true);
+      if (nearShop()) drawPrompt("PRESS E TO ENTER SHOP", ox, oy - 40);
+    } else {
+      drawNameTag(oref.name, ox, oy - 20, false);
+    }
+    if (oref.speech){
+      var left = oref.speech.until - now;
       if (left > 0){
         var frac = left < 600 ? left / 600 : 1;
-        drawSpeech(ex, ey - 30, ref.speech.text, frac);
+        drawSpeech(ox, oy - 30, oref.speech.text, frac);
       }
     }
   }
@@ -1641,7 +3365,7 @@ exitPos = { x:WORLD_W/2, y:WORLD_H/2 };
 state = "start";
 
 genHub();
-hubPlayer = { x:hubSpawn.x, y:hubSpawn.y, r:11, dir:"down", speech:null };
+hubPlayer = { x:hubSpawn.x, y:hubSpawn.y, r:11, dir:"down", speech:null, anim:0, animTimer:0 };
 hubCam = { x:0, y:0 };
 
 var last = performance.now();
@@ -1653,11 +3377,12 @@ function loop(now){
     renderHub();
   } else if (scene === "dungeon"){
     if (state === "play") update(dt);
-    if (player) render();
+    if (player && grid) render();
   }
   requestAnimationFrame(loop);
 }
 
+loadSpriteSheets();
 connect();
 requestAnimationFrame(loop);
 
